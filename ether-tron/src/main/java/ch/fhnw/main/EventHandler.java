@@ -10,6 +10,7 @@ import ch.fhnw.ether.scene.camera.DefaultCameraControl;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
 import ch.fhnw.ether.view.IView;
+import ch.fhnw.model.GameWorld;
 import ch.fhnw.util.color.RGBA;
 import ch.fhnw.util.math.Mat4;
 import ch.fhnw.util.math.Vec3;
@@ -28,19 +29,20 @@ public class EventHandler extends AbstractTool {
     private final int MOVE_RIGHT = 262;
 
     IController controller;
-    IMesh player = MeshUtilities.createCube();
+    GameWorld gw;
 
-    protected EventHandler(IController controller) {
+    protected EventHandler(IController controller, GameWorld gameWorld) {
         super(controller);
         this.controller = controller;
+        this.gw = gameWorld;
     }
 
-    protected EventHandler(IController controller, ITool fallbackTool) {
-        this(controller);
+    protected EventHandler(IController controller, ITool fallbackTool, GameWorld gameWorld) {
+        this(controller, gameWorld);
         this.fallbackTool = fallbackTool;
         this.controller = controller;
     }
-
+    
     public ITool getFallbackTool() {
         return fallbackTool;
     }
@@ -68,77 +70,32 @@ public class EventHandler extends AbstractTool {
 
     @Override
     public void keyPressed(IKeyEvent e) {
-
-        DefaultCameraControl control = new DefaultCameraControl(getCamera(e.getView()));
-        float moveFactor = 0.001f * control.getDistance();
+        GameWorld.STATE = GameWorld.USER_INPUT;
 
         if (e.getKey() == MOVE_FORWARD) {
-            //control.track(0, moveFactor * 20);
-            // Start animation forward
-            
-            // Start time merken
-            this.controller.animate(new IEventScheduler.IAnimationAction() {
-                private float c = 0f;
-                
-                
-
-                @Override
-                public void run(double time, double interval) {
-                    if( time > 2) {
-                        controller.kill(this);
-                    }
-                    c += 0.2f;
-                    if(c >= 5) {
-                        return;
-                    }
-                    Vec3 pos = player.getPosition();
-                    Mat4 transfrom = Mat4.translate(pos.x, pos.y+c, pos.z);
-                    // apply changes to geometry
-                    player.setTransform(transfrom);
-                }
-            });
-
+            gw.moveForward();
         }
 
         if (e.getKey() == MOVE_BACKWARD) {
-            //control.track(0, moveFactor * -20);
-            this.controller.animate(new IEventScheduler.IAnimationAction() {
-                private float c = 0f;
-
-                @Override
-                public void run(double time, double interval) {
-                    if( time > 2) {
-                        controller.kill(this);
-                    }
-                    c += 0.2f;
-                    if(c >= 5) {
-                        return;
-                    }
-                    System.out.println(time);
-                    Vec3 pos = player.getPosition();
-                    Mat4 transfrom = Mat4.translate(pos.x, pos.y - c, pos.z);
-                    // apply changes to geometry
-                    player.setTransform(transfrom);
-                }
-            });
+            gw.moveBackward();
         }
 
         if (e.getKey() == MOVE_RIGHT) {
-            control.track(moveFactor * 20, 0);
+            gw.moveRight();
+            
         }
 
         if (e.getKey() == MOVE_LEFT) {
-            control.track(moveFactor * -20, 0);
+            gw.moveLeft();
         }
 
-        getController().viewChanged(e.getView());
-        System.out.println("Key pressed: " + e.getKey());
+        
         fallbackTool.keyPressed(e);
     }
 
     @Override
     public void keyReleased(IKeyEvent e) {
-        System.out.println("Key released: " + e.getKey());
+        GameWorld.STATE = GameWorld.IDLE;
         fallbackTool.keyReleased(e);
     }
 

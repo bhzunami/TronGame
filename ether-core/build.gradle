@@ -1,0 +1,54 @@
+description = """ether-core"""
+
+ext {
+  swtVersion = "4.6"
+  swtArtifactName = "org.eclipse.swt.${swtWindowingLibrary}.${swtPlatform}.${swtArch}"
+}
+
+
+public String getLwjglArch(String platform) {
+  switch(platform.replaceAll(' ', '').toLowerCase()) {
+    case ~/.*linux.*/:  return 'linux'
+    case ~/.*darwin.*/: return 'macos'
+    case ~/.*osx.*/:    return 'macos'
+    case ~/.*win.*/:    return 'windows'
+    default:            return platform
+  }
+}
+
+ext {
+  //lwjglVersion = "3.0.0b"
+  //lwjglVersion = "3.1.0-SNAPSHOT"
+  lwjglVersion = "3.1.0"
+  lwjglArch = getLwjglArch(System.properties['os.name'])
+}
+
+dependencies {
+    compile "org.eclipse.swt:$swtArtifactName:$swtVersion"
+
+    compile "org.lwjgl:lwjgl:$lwjglVersion"
+    compile "org.lwjgl:lwjgl-opengl:$lwjglVersion"
+    compile "org.lwjgl:lwjgl-glfw:$lwjglVersion"
+    compile "org.lwjgl:lwjgl-stb:$lwjglVersion"
+    compile "org.lwjgl:lwjgl-nanovg:$lwjglVersion"
+
+    runtime "org.lwjgl:lwjgl:$lwjglVersion:natives-$lwjglArch"
+    runtime "org.lwjgl:lwjgl-glfw:$lwjglVersion:natives-$lwjglArch"
+    runtime "org.lwjgl:lwjgl-stb:$lwjglVersion:natives-$lwjglArch"
+    runtime "org.lwjgl:lwjgl-nanovg:$lwjglVersion:natives-$lwjglArch"
+
+    compile "com.github.wendykierp:JTransforms:3.1"
+
+    compile "com.github.sarxos:webcam-capture:0.3.11"
+
+    compile "com.googlecode.soundlibs:tritonus-share:0.3.7-2"
+    compile "com.googlecode.soundlibs:jlayer:1.0.1-1"
+    compile "com.googlecode.soundlibs:mp3spi:1.9.5-1"
+
+    compile "net.sourceforge.jaadec:jaad:0.8.4"
+
+    compile files("libs/xuggle/xuggle-xuggler-5.4.jar")
+    compile files("libs/jcodec/jcodec-0.2.jar")
+    compile files("libs/mmj/mmj.jar")
+    compile files("libs/plugins/plugins.jar")
+}

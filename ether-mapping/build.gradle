@@ -1,0 +1,7 @@
+description = """ether-mapping"""
+
+dependencies {
+    compile project(":ether-core")
+    
+    compile "org.apache.commons:commons-math3:3.6.1"
+}

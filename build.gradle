@@ -1,0 +1,21 @@
+subprojects {
+    version = "1.0"
+
+    group = "ch.fhnw.ether"
+
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+
+    apply from: "$rootProject.projectDir/gradle/swt.gradle"
+
+
+    sourceCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+        maven { url "http://maven-eclipse.github.io/maven" }
+    }
+}

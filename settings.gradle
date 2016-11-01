@@ -1,0 +1,13 @@
+rootProject.name = 'Tron Game'
+
+// libs
+include 'ether-core'
+include 'ether-mapping'
+
+
+// apps
+include 'ether-tron'
+include 'ether-soundium'
+include 'ether-demopolis'
+include 'ether-examples'
+

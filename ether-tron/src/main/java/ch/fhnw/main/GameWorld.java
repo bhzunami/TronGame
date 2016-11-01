@@ -23,12 +23,12 @@ public class GameWorld {
         System.out.println("Create world");
 
         // Create and add camera
-//        ICamera camera = new Camera(new Vec3(0, -5, 5), Vec3.ZERO);
-//        controller.getScene().add3DObject(camera);
-//        controller.setCamera(view, camera);
+        ICamera camera = new Camera(new Vec3(0, -5, 5), Vec3.ZERO);
+        controller.getScene().add3DObject(camera);
+        controller.setCamera(view, camera);
         
         // Add player
-//        this.controller.getScene().add3DObject(this.player);
+        this.controller.getScene().add3DObject(this.player);
         
     }
     

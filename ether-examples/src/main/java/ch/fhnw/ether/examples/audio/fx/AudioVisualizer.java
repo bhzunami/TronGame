@@ -31,7 +31,6 @@
 
 package ch.fhnw.ether.examples.audio.fx;
 
-
 import java.io.File;
 import java.io.IOException;
 

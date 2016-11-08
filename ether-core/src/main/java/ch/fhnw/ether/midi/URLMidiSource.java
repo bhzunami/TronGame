@@ -162,7 +162,7 @@ public class URLMidiSource extends AbstractFrameSource implements IMidiSource {
 				numPlays--;
 				startTime = -1;
 				count = 0;
-				return;
+				break;
 			}
 			trackspos[seltrack]++;
 			long tick = selevent.getTick();
@@ -186,7 +186,9 @@ public class URLMidiSource extends AbstractFrameSource implements IMidiSource {
 			if(setFrame && !msgs.isEmpty())
 				break;
 		}
-		((IMidiRenderTarget)target).setFrame(this, new MidiFrame(startTime + (curtime / AbstractMediaTarget.SEC2US), msgs.toArray(new MidiMessage[msgs.size()])));
+		MidiFrame frame = new MidiFrame(startTime + (curtime / AbstractMediaTarget.SEC2US), msgs.toArray(new MidiMessage[msgs.size()]));
+		((IMidiRenderTarget)target).setFrame(this, frame);
+		frame.setLast(numPlays <= 0);
 		msgs.clear();
 	}
 

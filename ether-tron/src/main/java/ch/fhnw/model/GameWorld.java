@@ -64,6 +64,9 @@ public class GameWorld {
         controller.animate(new IEventScheduler.IAnimationAction() {
             @Override
             public void run(double time, double interval) {
+                // Read server input
+                // Update players
+                // render World
                 switch(GameWorld.STATE) {
                 case GameWorld.IDLE:
                     c = 0;
@@ -76,8 +79,6 @@ public class GameWorld {
                 default:
                         break;
                 }
-               
-                
                 
             }
         });
@@ -88,14 +89,19 @@ public class GameWorld {
         
         c += 0.05;
         Vec3 pos = players.get(0).getMesh().getPosition();
+        ICamera cam = this.controller.getCamera(controller.getCurrentView());
+        Vec3 cam_pos = this.controller.getCamera(controller.getCurrentView()).getPosition();
         System.out.println("Start from " +pos.x +pos.y);
         Mat4 transfrom = null;
         switch(movement) {
         case "FORWARD":
             Vec3 target = new Vec3(pos.x, pos.y+c, pos.z);
-            Vec3 ctarget = new Vec3(pos.x, pos.y+c-3, pos.z+2);
+            Vec3 ctarget = new Vec3(cam_pos.x, cam_pos.y, cam_pos.z);
             transfrom = Mat4.translate(target);
             players.get(0).setPosition(target);
+            //cam.setPosition(ctarget);
+//            cam.setTarget(ctarget);
+            //controller.setCamera(controller.getCurrentView(), cam);
             //controller.getCamera(controller.getCurrentView()).setPosition(ctarget);
             break;
         case "BACKWARD":

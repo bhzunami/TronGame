@@ -26,3 +26,7 @@ hs_err*.log
 
 # LWJGL Temp
 .lwjgl
+
+# go
+server/pkg
+server/src

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"unsafe"
 )
 
 const (
@@ -38,7 +39,10 @@ func main() {
 			continue
 		}
 		payload := buffer[:n]
-		log.Println("received", string(payload), "from", remAddr)
+		pos1 := payload[:4]
+		f1 := (*float32)(unsafe.Pointer(&pos1[0]))
+
+		log.Println("received", *f1, "from", remAddr)
 	}
 
 }

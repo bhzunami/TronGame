@@ -38,6 +38,7 @@ import java.util.List;
 import org.jtransforms.fft.FloatFFT_1D;
 
 import ch.fhnw.ether.audio.AudioFrame;
+import ch.fhnw.ether.audio.AudioUtilities;
 import ch.fhnw.ether.audio.AudioUtilities.Window;
 import ch.fhnw.ether.audio.BlockBuffer;
 import ch.fhnw.ether.audio.IAudioRenderTarget;
@@ -56,26 +57,31 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 	private       BlockBuffer   buffer;
 	private       int           fftSize;
 	private       int           fftSize2;
-	private       int           fftSize4;
 	private final List<float[]> spectrum = new LinkedList<>();
 	private       float[]       block;
 	private       float         sRate;
 	private       float[]       power;
+	private       float         energy;
 	private       float[]       pcm0;
 	private       int           pcm0rd;
 	private       float[]       pcm1;
 	private       int           pcm1rd;
 
+	public FFT(float minFreq, Window windowType) {
+		this.minFreq    = minFreq;
+		this.windowType = windowType;
+	}
+
 	@Override
 	protected void init(IAudioRenderTarget target) {
 		sRate    = target.getSampleRate();
 		fftSize  = MathUtilities.nextPowerOfTwo((int)(sRate / minFreq));
-		fftSize4 = fftSize / 4;
+		fftSize2 = fftSize / 2;
 		LOG.info("FFT of " + fftSize + " at " + sRate + " Hz");
 		fft      = new FloatFFT_1D(fftSize);
 		buffer   = new BlockBuffer(fftSize, true, windowType);
 		block    = new float[fftSize];
-		power    = new float[fftSize4];
+		power    = new float[fftSize2];
 		pcm1     = new float[fftSize];
 		pcm1rd   = fftSize2;
 		pcm0rd   = fftSize;
@@ -164,23 +170,20 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 			modifier.modify(spectrum);
 	}
 
-	public FFT(float minFreq, Window windowType) {
-		this.minFreq    = minFreq;
-		this.windowType = windowType;
-	}
-
 	@Override
 	protected void run(final IAudioRenderTarget target) throws RenderCommandException {
 		final AudioFrame frame = target.getFrame();
 		buffer.add(frame.getMonoSamples());
-		int nBlocks = 0;
+		int  nBlocks = 0;
+		float energy = 0;
 		for(block = buffer.nextBlock(); block  != null; block = buffer.nextBlock()) {
 			if(nBlocks == 0)
 				Arrays.fill(power, 0f);
 
+			energy += AudioUtilities.energy(block);
 			fft.realForward(block);
 			spectrum.add(block);
-			final int lim = block.length / 2;
+			final int lim = block.length;
 			for(int i = 0; i < lim; i+= 2) {
 				final float  re = block[i+0];
 				final float  im = block[i+1];
@@ -192,8 +195,9 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 
 		if(nBlocks > 0) {
 			float div = nBlocks;
-			for(int i = 0; i < power.length; i++)
-				power[i] /= div;
+			for(int i = 0; i < this.power.length; i++)
+				this.power[i] /= div;
+			this.energy = energy / div;
 		}
 	}	
 
@@ -203,5 +207,9 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 
 	public float getMinFreq() {
 		return minFreq;
+	}
+
+	public double energy() {
+		return energy;
 	}
 }

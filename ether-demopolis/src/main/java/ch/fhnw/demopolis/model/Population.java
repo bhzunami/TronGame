@@ -218,7 +218,7 @@ public class Population {
 				-w, 0, 0, w, 0, 0, w, 0, h,
 				-w, 0, 0, w, 0, h, -w, 0, h
 		};
-		float[] t = MeshUtilities.DEFAULT_QUAD_TEX_COORDS;
+		float[] t = MeshUtilities.UNIT_QUAD_TEX_COORDS;
 		return new DefaultMesh(Primitive.TRIANGLES, new MaskMaterial(texture), DefaultGeometry.createVM(v, t), Flag.DONT_CULL_FACE);
 	}
 	

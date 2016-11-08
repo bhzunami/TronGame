@@ -39,9 +39,9 @@ import ch.fhnw.ether.media.RenderCommandException;
 
  public class AutoGain extends AbstractRenderCommand<IAudioRenderTarget> {
 	 public static final Parameter TARGET  = new Parameter("gain",    "Gain [dB]", -120, 0,  -10);
-	 public static final Parameter ATTACK  = new Parameter("attack",  "Attack",       0, 1,   0.015f);
+	 public static final Parameter ATTACK  = new Parameter("attack",  "Attack",       0, 1,   0.3f);
 	 public static final Parameter SUSTAIN = new Parameter("sustain", "Sustain",      0, 10,  5);
-	 public static final Parameter DECAY   = new Parameter("decay",   "Decay",        0, 1,   2f);
+	 public static final Parameter DECAY   = new Parameter("decay",   "Decay",        0, 1,   0.1f);
 
 	 private final static double MAX2AVG      = 0.5;
 	 private static final double SMOOTH_DELAY = 0.1;

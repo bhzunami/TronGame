@@ -49,7 +49,7 @@ public abstract class AbstractMediaTarget<F extends AbstractFrame, T extends IRe
 	protected RenderProgram<T>              program;
 	protected ITimebase                     timebase;
 	protected final AtomicBoolean           isRendering  = new AtomicBoolean();
-	private   final AtomicReference<F>      frame        = new AtomicReference<>();
+	protected final AtomicReference<F>      frame        = new AtomicReference<>();
 	private         CountDownLatch          startLatch;
 	private   final List<BlockingTimeEvent> timeEvents   = new LinkedList<>();
 	private   long                          startTime;

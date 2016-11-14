@@ -30,14 +30,16 @@
  */package ch.fhnw.ether.audio.fx;
 
  import ch.fhnw.ether.audio.AudioFrame;
-import ch.fhnw.ether.audio.AudioUtilities;
-import ch.fhnw.ether.audio.GainEngine;
-import ch.fhnw.ether.audio.IAudioRenderTarget;
-import ch.fhnw.ether.media.AbstractRenderCommand;
-import ch.fhnw.ether.media.Parameter;
-import ch.fhnw.ether.media.RenderCommandException;
+ import ch.fhnw.ether.audio.AudioUtilities;
+ import ch.fhnw.ether.audio.GainEngine;
+ import ch.fhnw.ether.audio.IAudioRenderTarget;
+ import ch.fhnw.ether.media.AbstractRenderCommand;
+ import ch.fhnw.ether.media.Parameter;
+ import ch.fhnw.ether.media.RenderCommandException;
+ import ch.fhnw.ether.ui.IPlotable;
+import ch.fhnw.util.color.RGB;
 
- public class AutoGain extends AbstractRenderCommand<IAudioRenderTarget> {
+ public class AutoGain extends AbstractRenderCommand<IAudioRenderTarget> implements IPlotable {
 	 public static final Parameter TARGET  = new Parameter("gain",    "Gain [dB]", -120, 0,  -10);
 	 public static final Parameter ATTACK  = new Parameter("attack",  "Attack",       0, 1,   0.3f);
 	 public static final Parameter SUSTAIN = new Parameter("sustain", "Sustain",      0, 10,  5);
@@ -56,12 +58,8 @@ import ch.fhnw.ether.media.RenderCommandException;
 	 }
 
 	 @Override
-	protected void init(IAudioRenderTarget target) {
+	 protected void init(IAudioRenderTarget target) {
 		 gainEngine   = new GainEngine(target.getSampleRate(), target.getNumChannels(), SMOOTH_DELAY, getVal(SUSTAIN), getVal(ATTACK), getVal(DECAY), MIN_LEVEL);
-	 }
-
-	 public void process(AudioFrame frame) {
-
 	 }
 
 	 public float gain() {
@@ -75,7 +73,7 @@ import ch.fhnw.ether.media.RenderCommandException;
 	 @Override
 	 protected void run(final IAudioRenderTarget target) throws RenderCommandException {
 		 final AudioFrame frame = target.getFrame();
-		 
+
 		 gainEngine.setAttackSpeed(getVal(ATTACK));
 		 gainEngine.setSustainSpeed(getVal(SUSTAIN));
 		 gainEngine.setDecaySpeed(getVal(DECAY));
@@ -101,5 +99,10 @@ import ch.fhnw.ether.media.RenderCommandException;
 		 for (int i = 0; i < samples.length; i++)
 			 samples[i] *= correction;
 
-		 frame.modified(); }
+		 frame.modified(); 
+
+		 clear();
+		 bar(AudioUtilities.energy(frame.samples), RGB.GRAY);
+		 point(correction, 0, 15, RGB.RED);
+	 }
  }

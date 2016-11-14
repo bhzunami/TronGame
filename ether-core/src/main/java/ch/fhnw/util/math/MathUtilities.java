@@ -209,4 +209,26 @@ public final class MathUtilities {
 		}
 		return result;
 	}
+
+	public static float min(float[] values) {
+		float result = values[0];
+		for(int i = 1; i < values.length; i++)
+			if(values[i] < result) result = values[i];
+		return result;
+	}
+
+	public static float max(float[] values) {
+		float result = values[0];
+		for(int i = 1; i < values.length; i++)
+			if(values[i] > result) result = values[i];
+		return result;
+	}
+
+	public static float[] normalize(float[] values, float targetMin, float targetMax) {
+		float min = min(values);
+		float max = max(values);
+		for(int i = 0; i < values.length; i++)
+			values[i] = map(values[i], min, max, targetMin, targetMax);
+		return values;
+	}
 }

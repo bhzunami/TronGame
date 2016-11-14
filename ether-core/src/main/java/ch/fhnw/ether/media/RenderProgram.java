@@ -198,7 +198,8 @@ public class RenderProgram<T extends IRenderTarget<?>> extends AbstractRenderCom
 	protected void run() throws RenderCommandException {
 		AbstractRenderCommand<T>[] commands = program.get(); 
 		for(AbstractRenderCommand<T> command : commands)
-			command.runInternal(target.get());
+			if(!(command.isSkip()))
+				command.runInternal(target.get());
 	}
 
 

@@ -55,6 +55,8 @@ public class DefaultScene implements IScene {
 
 	@Override
 	public final void add3DObject(I3DObject object) {
+		if(object == null)
+			throw new NullPointerException("object == null");
 		if (objects.contains(object))
 			throw new IllegalArgumentException("object already in scene: " + object);
 

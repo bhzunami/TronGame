@@ -187,4 +187,9 @@ public class SpectrumAudioTarget implements IAudioRenderTarget {
 	public boolean isRealTime() {
 		return timebase == null ? false : timebase.isRealTime(); 
 	}
+
+	@Override
+	public void setFrameInternal(AudioFrame frame) {
+		this.frame.set(frame);
+	}
 }

@@ -42,4 +42,9 @@ public abstract class AbstractAudioTarget extends AbstractMediaTarget<AudioFrame
 	public IAudioSource getAudioSource() {
 		return (IAudioSource) program.getFrameSource();
 	}
+	
+	@Override
+	public void setFrameInternal(AudioFrame frame) {
+		this.frame.set(frame);
+	}
 }

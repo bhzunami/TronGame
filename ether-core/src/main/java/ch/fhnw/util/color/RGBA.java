@@ -40,6 +40,7 @@ import ch.fhnw.util.math.Vec4;
 public final class RGBA implements IColor, IVec4 {
 	public static final RGBA BLACK = new RGBA(0, 0, 0, 1);
 	public static final RGBA WHITE = new RGBA(1, 1, 1, 1);
+	public static final RGBA CLEAR = new RGBA(0, 0, 0, 0);
 
 	public static final RGBA RED = new RGBA(1, 0, 0, 1);
 	public static final RGBA GREEN = new RGBA(0, 1, 0, 1);

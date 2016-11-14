@@ -40,4 +40,5 @@ public interface IAudioRenderTarget extends IRenderTarget<AudioFrame>  {
 	float        getSampleRate();
 	void         useProgram(RenderProgram<IAudioRenderTarget> program) throws RenderCommandException;
 	IAudioSource getAudioSource();
+	void         setFrameInternal(AudioFrame frame);
 }

@@ -47,6 +47,7 @@ import ch.fhnw.ether.controller.tool.ITool;
 import ch.fhnw.ether.controller.tool.NavigationTool;
 import ch.fhnw.ether.controller.tool.PickTool;
 import ch.fhnw.ether.media.IScheduler;
+import ch.fhnw.ether.platform.Platform;
 import ch.fhnw.ether.render.DefaultRenderManager;
 import ch.fhnw.ether.render.IRenderManager;
 import ch.fhnw.ether.render.IRenderer;
@@ -277,12 +278,16 @@ public class DefaultController implements IController {
 
 		// always handle ESC (if not handled by button)
 		if (e.getKey() == GLFW.GLFW_KEY_ESCAPE)
-			System.exit(0);
+			escAction();
 
 		// finally, pass on to tool
 		tool.keyPressed(e);
 	}
-
+	
+	protected void escAction() {
+		Platform.get().exit();
+	}
+	
 	@Override
 	public void keyReleased(IKeyEvent e) {
 		if (DBG)

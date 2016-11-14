@@ -15,7 +15,6 @@ import org.corebounce.engine.Engine;
 import org.corebounce.io.OSC;
 import org.corebounce.ui.AutoComplete;
 import org.corebounce.ui.GridDataFactory;
-import org.corebounce.ui.Repeating;
 import org.corebounce.video.Pusher;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -48,6 +47,7 @@ import org.eclipse.swt.widgets.ToolTip;
 
 import ch.fhnw.ether.platform.Platform;
 import ch.fhnw.ether.platform.Platform.OS;
+import ch.fhnw.ether.ui.Repeating;
 import ch.fhnw.util.ClassUtilities;
 import ch.fhnw.util.LRUList;
 import ch.fhnw.util.Log;

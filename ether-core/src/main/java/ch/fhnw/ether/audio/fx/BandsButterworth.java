@@ -36,8 +36,11 @@ import ch.fhnw.ether.audio.IAudioRenderTarget;
 import ch.fhnw.ether.audio.Smooth;
 import ch.fhnw.ether.media.AbstractRenderCommand;
 import ch.fhnw.ether.media.RenderCommandException;
+import ch.fhnw.ether.ui.IPlotable;
+import ch.fhnw.util.color.RGB;
+import ch.fhnw.util.math.MathUtilities;
 
- public class BandsButterworth extends AbstractRenderCommand<IAudioRenderTarget> {
+ public class BandsButterworth extends AbstractRenderCommand<IAudioRenderTarget> implements IPlotable {
 	 private final int     size;
 	 private final double  lowers[];
 	 private final double  uppers[];
@@ -147,8 +150,15 @@ import ch.fhnw.ether.media.RenderCommandException;
 			 float[] samples = frame.getMonoSamples().clone();
 			 for(int i = 0; i < filters[band].length; i++)
 				 filters[band][i].processBand(samples);
-			 power[band] = AudioUtilities.energy(samples) * centers.length * 10;
+			 power[band] = AudioUtilities.energy(samples) * centers.length;
 		 }
 		 smooth.update(target.getTime(), power);
+		 clear();
+		 column(MathUtilities.normalize(power.clone(), 0, 1), RGB.WHITE);
 	 }	
+	 
+	 @Override
+	public int getPlotHeight() {
+		return numBands();
+	}
  }

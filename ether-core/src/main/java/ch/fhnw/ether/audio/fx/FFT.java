@@ -31,6 +31,7 @@
 
 package ch.fhnw.ether.audio.fx;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,11 +45,13 @@ import ch.fhnw.ether.audio.BlockBuffer;
 import ch.fhnw.ether.audio.IAudioRenderTarget;
 import ch.fhnw.ether.media.AbstractRenderCommand;
 import ch.fhnw.ether.media.RenderCommandException;
+import ch.fhnw.ether.ui.IPlotable;
 import ch.fhnw.util.IModifier;
 import ch.fhnw.util.Log;
+import ch.fhnw.util.color.RGB;
 import ch.fhnw.util.math.MathUtilities;
 
-public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
+public class FFT extends AbstractRenderCommand<IAudioRenderTarget> implements IPlotable {
 	private static final Log LOG = Log.create();
 
 	private final float         minFreq;
@@ -66,12 +69,13 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 	private       int           pcm0rd;
 	private       float[]       pcm1;
 	private       int           pcm1rd;
-
+	private       List<AbstractRenderCommand<IAudioRenderTarget>> fftCmds = new ArrayList<>();
+	
 	public FFT(float minFreq, Window windowType) {
 		this.minFreq    = minFreq;
 		this.windowType = windowType;
 	}
-
+	
 	@Override
 	protected void init(IAudioRenderTarget target) {
 		sRate    = target.getSampleRate();
@@ -85,6 +89,16 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 		pcm1     = new float[fftSize];
 		pcm1rd   = fftSize2;
 		pcm0rd   = fftSize;
+	}
+
+	public void addLast(AbstractRenderCommand<IAudioRenderTarget> cmd) {
+		cmd.setSkip(true);
+		fftCmds.add(cmd);
+	}
+
+	public void addFirst(AbstractRenderCommand<IAudioRenderTarget> cmd) {
+		cmd.setSkip(true);
+		fftCmds.add(0, cmd);
 	}
 
 	public float power(float fLow, float fHigh) {
@@ -191,6 +205,12 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 				power[i >> 1] += (float)p;
 			}
 			nBlocks++;
+			
+			this.energy = energy;
+			target.setFrameInternal(new AudioFrame(frame.sTime, 1, target.getSampleRate(), block));
+			for(AbstractRenderCommand<IAudioRenderTarget> cmd : fftCmds)
+				cmd.runInternal(target);
+			target.setFrameInternal(frame);
 		}
 
 		if(nBlocks > 0) {
@@ -199,8 +219,17 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 				this.power[i] /= div;
 			this.energy = energy / div;
 		}
+		
+		clear();
+		column(this.power, 0, 10, RGB.WHITE);
+		point(this.energy, RGB.RED);
 	}	
 
+	@Override
+	public int getPlotHeight() {
+		return 256;
+	}
+	
 	public Window getWindowType() {
 		return windowType;
 	}
@@ -211,5 +240,9 @@ public class FFT extends AbstractRenderCommand<IAudioRenderTarget> {
 
 	public double energy() {
 		return energy;
+	}
+
+	public List<AbstractRenderCommand<IAudioRenderTarget>> getCommands() {
+		return fftCmds;
 	}
 }

@@ -29,66 +29,27 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package ch.fhnw.ether.controller.event;
+package org.corebounce.resman;
 
-import org.lwjgl.glfw.GLFW;
+import ch.fhnw.ether.audio.IAudioRenderTarget;
+import ch.fhnw.ether.media.AbstractRenderCommand;
+import ch.fhnw.ether.media.Parameter;
+import ch.fhnw.ether.media.RenderCommandException;
 
-import ch.fhnw.ether.view.IView;
+public class MonitorGain extends AbstractRenderCommand<IAudioRenderTarget> {
+	public static final Parameter GAIN = new Parameter("gain", "Monitor", 0, 2, 0);
 
-/**
- * Key event, aligned with the underlying windowing framework.
- * 
- * @author radar
- */
-public interface IKeyEvent extends IEvent {
-	class KeyEvent extends Event implements IKeyEvent {
-		private final int key;
-		private final int scanCode;
-		private final boolean repeated;
-		
-		public KeyEvent(IView view, int mods, int key, int scanCode, boolean repeated) {
-			super(view, mods);
-			this.key = key;
-			this.scanCode = scanCode;
-			this.repeated = repeated;
-		}
-		
-		@Override
-		public int getKey() {
-			return key;
-		}
-		
-		@Override
-		public int getScanCode() {
-			return scanCode;
-		}
-		
-		@Override
-		public boolean isRepeated() {
-			return repeated;
-		}
+	public MonitorGain() {
+		super(GAIN);
 	}
-
-	int VK_END    = GLFW.GLFW_KEY_END;
-	int VK_ENTER  = GLFW.GLFW_KEY_ENTER;
-	int VK_ESCAPE = GLFW.GLFW_KEY_ESCAPE;
-	int VK_DELETE = GLFW.GLFW_KEY_END;
-	int VK_SPACE  = GLFW.GLFW_KEY_SPACE;
-	int VK_Z      = GLFW.GLFW_KEY_Z;
-	int VK_Y      = GLFW.GLFW_KEY_Y;
 	
-	/**
-	 * Returns keyboard key associated with this event.
-	 */
-	int getKey();
-
-	/**
-	 * Returns (system specific) scancode of the.
-	 */
-	int getScanCode();
-
-	/**
-	 * Returns true if this key is pressed and triggered an auto repeate
-	 */
-	boolean isRepeated();
+	@Override
+	protected void run(final IAudioRenderTarget target) throws RenderCommandException {
+		final float   gain    = getVal(GAIN);
+		final float[] samples = target.getFrame().samples;
+		for(int i = 0; i < samples.length; i++)
+			samples[i] *= gain;
+		
+		target.getFrame().modified();
+	}
 }

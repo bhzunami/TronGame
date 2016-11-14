@@ -449,7 +449,6 @@ public class ParameterWindow {
 
 	public ParameterWindow(final IParameterWindowAddOn addOn, final AbstractRenderCommand<? extends IRenderTarget<?>> src, Flag ... flags) {
 		Platform.get().runOnMainThread(new Runnable() {
-
 			@Override
 			public void run() {
 				Shell f = new Shell(Display.getDefault());

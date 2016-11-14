@@ -1,4 +1,4 @@
-package ch.fhnw.main;
+package ch.fhnw.main.events;
 
 import ch.fhnw.ether.controller.IController;
 import ch.fhnw.ether.controller.event.IEventScheduler;
@@ -31,13 +31,13 @@ public class EventHandler extends AbstractTool {
     IController controller;
     GameWorld gw;
 
-    protected EventHandler(IController controller, GameWorld gameWorld) {
+    public EventHandler(IController controller, GameWorld gameWorld) {
         super(controller);
         this.controller = controller;
         this.gw = gameWorld;
     }
 
-    protected EventHandler(IController controller, ITool fallbackTool, GameWorld gameWorld) {
+    public EventHandler(IController controller, ITool fallbackTool, GameWorld gameWorld) {
         this(controller, gameWorld);
         this.fallbackTool = fallbackTool;
         this.controller = controller;

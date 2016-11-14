@@ -16,6 +16,8 @@ import ch.fhnw.util.math.Vec3;
 
 public class GameWorld {
     
+    // The player which plays on this view
+    private Player mplayer;
     private List<Player> players = new ArrayList<>();
     private List<IMesh> ramps = new ArrayList<>();
     private List<IMesh> blocks = new ArrayList<>();
@@ -26,13 +28,11 @@ public class GameWorld {
     public static final int USER_INPUT = 1;
     public static int STATE;
     private String movement = null;
-    float c = 0;
+    float c = 0;    
     
-    private double animationStart = 0;
-    
-    
-    public GameWorld(IController controller) {
+    public GameWorld(IController controller, Player p) {
         this.controller = controller;
+        this.mplayer = p;
     }
     
     
@@ -43,17 +43,14 @@ public class GameWorld {
     
     public void createWorld(IScene scene, IView view) {
         System.out.println("Create Game world");
-        Player player = null;
         
         // Add player
         for(Player p : this.players) {
             this.controller.getScene().add3DObject(p.getMesh());
-            if(p.isShow())
-                player = p;
         }
         
-        // Create and add camera
-        Vec3 pos = player.getPosition();
+        // Create and add camera to the main player
+        Vec3 pos = this.mplayer.getPosition();
         ICamera camera = new Camera(new Vec3(pos.x, pos.y -3, pos.z + 2), Vec3.ZERO);
         controller.getScene().add3DObject(camera);
         controller.setCamera(view, camera);
@@ -61,6 +58,7 @@ public class GameWorld {
     
     public void run() {
        
+        //while( true ) {
         controller.animate(new IEventScheduler.IAnimationAction() {
             @Override
             public void run(double time, double interval) {
@@ -93,20 +91,27 @@ public class GameWorld {
         Vec3 cam_pos = this.controller.getCamera(controller.getCurrentView()).getPosition();
         System.out.println("Start from " +pos.x +pos.y);
         Mat4 transfrom = null;
+        Vec3 ctarget = null;
+        Vec3 target = null;
         switch(movement) {
+        
         case "FORWARD":
-            Vec3 target = new Vec3(pos.x, pos.y+c, pos.z);
-            Vec3 ctarget = new Vec3(cam_pos.x, cam_pos.y, cam_pos.z);
+            target = new Vec3(pos.x, pos.y+c, pos.z);
+            ctarget = new Vec3(cam_pos.x, cam_pos.y +c , cam_pos.z);
             transfrom = Mat4.translate(target);
             players.get(0).setPosition(target);
-            //cam.setPosition(ctarget);
-//            cam.setTarget(ctarget);
+            cam.setPosition(ctarget);
+            cam.setTarget(target);
             //controller.setCamera(controller.getCurrentView(), cam);
             //controller.getCamera(controller.getCurrentView()).setPosition(ctarget);
             break;
         case "BACKWARD":
-            transfrom = Mat4.translate(pos.x, pos.y-c, pos.z);
+            target = new Vec3(pos.x, pos.y-c, pos.z);
+            transfrom = Mat4.translate(target);
             players.get(0).setPosition(new Vec3(pos.x, pos.y-c, pos.z));
+            ctarget = new Vec3(cam_pos.x, cam_pos.y - c , cam_pos.z);
+            cam.setPosition(ctarget);
+            cam.setTarget(target);
             break;
         case "LEFT":
             transfrom = Mat4.translate(pos.x-(c/2), pos.y, pos.z);

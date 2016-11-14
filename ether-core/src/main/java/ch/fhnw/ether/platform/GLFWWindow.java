@@ -33,6 +33,7 @@ package ch.fhnw.ether.platform;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -492,7 +493,7 @@ final class GLFWWindow implements IWindow {
 			try {
 				IHostImage src = Platform.get().getImageSupport().readHost(new FileInputStream(file), ComponentType.BYTE, ComponentFormat.RGBA, AlphaMode.POST_MULTIPLIED);
 				GLFWImage image = GLFWImage.malloc();
-				image.set(src.getWidth(), src.getHeight(), src.getPixels());			
+				image.set(src.getWidth(), src.getHeight(), flip(src.getPixels(), src.getHeight()));			
 				cursor = Long.valueOf(GLFW.glfwCreateCursor(image, hotX, hotY));
 				FILE2CRSR.put(file, cursor);
 				image.free();
@@ -502,5 +503,18 @@ final class GLFWWindow implements IWindow {
 		}
 		if(cursor != null)
 			GLFW.glfwSetCursor(window, cursor.longValue());
+	}
+
+	private ByteBuffer flip(ByteBuffer pixels, int h) {
+		pixels.clear();
+		ByteBuffer result = ByteBuffer.allocateDirect(pixels.capacity());
+		byte[] line = new byte[pixels.capacity() / h];
+		for(int y = h; --y >= 0;) {
+			pixels.position(y*line.length);
+			pixels.get(line);
+			result.put(line);
+		}
+		result.clear();
+		return result;
 	}
 }

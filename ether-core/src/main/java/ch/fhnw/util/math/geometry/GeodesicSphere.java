@@ -34,6 +34,8 @@ package ch.fhnw.util.math.geometry;
 import java.util.ArrayList;
 import java.util.List;
 
+import ch.fhnw.util.Log;
+import ch.fhnw.util.Log.Level;
 import ch.fhnw.util.math.MathUtilities;
 import ch.fhnw.util.math.Vec3;
 
@@ -51,6 +53,8 @@ import ch.fhnw.util.math.Vec3;
  *
  */
 public class GeodesicSphere {
+	private static final Log log = Log.create(Level.SEVERE, Level.WARN, Level.INFO);
+	
 	private static final float SCALE = 0.5f;
 
 	private static final double PI2 = Math.PI / 2;
@@ -135,7 +139,7 @@ public class GeodesicSphere {
 					subdividePoints(VERTICES[INDICES[i][0]], VERTICES[INDICES[i][1]], VERTICES[INDICES[i][2]], vertices, PFLAGS[i][0], PFLAGS[i][1],
 							PFLAGS[i][2], depth);
 			}
-			System.out.println("# points:" + vertices.size());
+			log.debug("# points:" + vertices.size());
 
 			points = Vec3.toArray(vertices);
 		}
@@ -154,7 +158,7 @@ public class GeodesicSphere {
 					subdivideLines(VERTICES[INDICES[i][0]], VERTICES[INDICES[i][1]], VERTICES[INDICES[i][2]], vertices, LFLAGS[i][0], LFLAGS[i][1],
 							LFLAGS[i][2], depth);
 			}
-			System.out.println("# lines:" + vertices.size() / 2);
+			log.debug("# lines:" + vertices.size() / 2);
 
 			lines = Vec3.toArray(vertices);
 		}
@@ -168,9 +172,9 @@ public class GeodesicSphere {
 			for (int i = 0; i < 20; i++)
 				subdivideTriangles(VERTICES[INDICES[i][0]], VERTICES[INDICES[i][1]], VERTICES[INDICES[i][2]], vertices, depth);
 
-			System.out.println("# triangles:" + vertices.size() / 3);
-
 			triangles = Vec3.toArray(vertices);
+			
+			log.debug("# triangles:" + vertices.size() / 3);
 		}
 		return triangles;
 	}

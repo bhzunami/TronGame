@@ -119,8 +119,9 @@ public class Demopolis {
 				}
 			});
 
-			if (fullscreen)
-				view.getWindow().setFullscreen(Platform.get().getMonitors()[0]);
+			if (fullscreen) {
+				Platform.get().runOnMainThread(() -> view.getWindow().setFullscreen(Platform.get().getMonitors()[0]));
+			}
 		});
 	}
 }

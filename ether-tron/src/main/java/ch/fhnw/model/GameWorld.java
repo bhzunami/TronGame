@@ -89,7 +89,6 @@ public class GameWorld {
         Vec3 pos = players.get(0).getMesh().getPosition();
         ICamera cam = this.controller.getCamera(controller.getCurrentView());
         Vec3 cam_pos = this.controller.getCamera(controller.getCurrentView()).getPosition();
-        System.out.println("Start from " +pos.x +pos.y);
         Mat4 transfrom = null;
         Vec3 ctarget = null;
         Vec3 target = null;
@@ -126,7 +125,7 @@ public class GameWorld {
                 
         }
        
-        players.get(0).getMesh().setTransform(transfrom);
+//        players.get(0).getMesh().setTransform(transfrom);
     }
     
     

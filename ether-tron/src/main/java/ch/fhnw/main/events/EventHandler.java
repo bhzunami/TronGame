@@ -71,6 +71,8 @@ public class EventHandler extends AbstractTool {
     @Override
     public void keyPressed(IKeyEvent e) {
         GameWorld.STATE = GameWorld.USER_INPUT;
+        
+        System.out.println(e.getKey());
 
         if (e.getKey() == MOVE_FORWARD) {
             gw.moveForward();

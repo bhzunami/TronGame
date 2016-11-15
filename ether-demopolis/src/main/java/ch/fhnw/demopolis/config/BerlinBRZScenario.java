@@ -30,9 +30,11 @@
 package ch.fhnw.demopolis.config;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import ch.fhnw.demopolis.model.entities.IDesignEntity;
+import ch.fhnw.util.math.Vec3;
 
 public class BerlinBRZScenario extends BerlinScenario {
 	
@@ -104,7 +106,87 @@ public class BerlinBRZScenario extends BerlinScenario {
 		return b.toArray(new String[0]);
 	}
 	
+	@Override
+	public List<Vec3> getIntroCameraVertices() {
+		return Arrays.asList(INTRO_BRZ);
+	}
+	
+	@Override
+	public List<Vec3> getLoopCameraVertices() {
+		return Arrays.asList(LOOP_BRZ);
+	}
+
 	private String path(String asset) {
 		return modelPath + "/" + asset;
 	}
+	
+	
+	private static final Vec3[] INTRO_BRZ = new Vec3[] {
+		// intro
+		new Vec3(-1200.0, -1200.0, 200.0),
+		new Vec3(-1040.0, -1040.0, 200.0),
+		new Vec3(-880.0, -880.0, 200.0),
+		new Vec3(-720.0, -720.0, 200.0),
+		new Vec3(-560.0, -560.0, 200.0),
+		new Vec3(-400.0, -400.0, 200.0),
+		new Vec3(-240.0, -240.0, 200.0),
+		new Vec3(-80.0, -80.0, 200.0),
+		new Vec3(80.0, 80.0, 200.0),
+		new Vec3(240.0, 240.0, 200.0),
+		new Vec3(493.36746, 467.88876, 200.0),
+		new Vec3(867.09937, 695.69257, 200.0),
+		new Vec3(1626.22, 1090.26, 150.0),
+		new Vec3(1140.4432, 1146.7141, 100.0),
+		new Vec3(802.13116, 960.58325, 50.0),
+		new Vec3(629.64246, 798.37146, 20.0),
+		new Vec3(532.41113, 675.93604, 10.0),
+		new Vec3(466.70566, 590.3576, 5.0),
+		new Vec3(409.6342, 514.03174, 5.0),
+		new Vec3(355.4573, 438.89584, 5.0),
+	};
+	
+	
+	private static final Vec3[] LOOP_BRZ = new Vec3[] {
+		// loop
+		new Vec3(409.6342, 514.03174, 5.0),
+		new Vec3(355.4573, 438.89584, 5.0),
+		new Vec3(317.29266, 392.75934, 5.0),
+		new Vec3(277.0665, 345.7264, 5.0),
+		new Vec3(234.94186, 299.32367, 5.0),
+		new Vec3(193.04176, 255.09348, 5.0),
+		new Vec3(130.45024, 196.80164, 5.0),
+		new Vec3(67.16792, 149.34465, 5.0),
+		new Vec3(0.11019015, 97.992035, 5.0),
+		new Vec3(-66.35626, 44.114475, 5.0),
+		new Vec3(-142.82806, -17.07383, 5.0),
+		new Vec3(-230.262, -85.79602, 5.0000153),
+		new Vec3(-319.40765, -153.6788, 4.999996),
+		new Vec3(-403.71494, -218.66223, 5.0000076),
+		new Vec3(-473.6577, -289.81778, 5.000061),
+		new Vec3(-510.429, -375.48642, 9.999985),
+		new Vec3(-482.33762, -455.04883, 15.0),
+		new Vec3(-439.71225, -520.23413, 19.999847),
+		new Vec3(-373.54547, -601.02185, 24.999939),
+		new Vec3(-282.09488, -657.23157, 30.00003),
+		new Vec3(-142.15686, -681.77264, 35.000137),
+		new Vec3(-27.723007, -591.964, 40.0),
+		new Vec3(54.282234, -497.8966, 40.0),
+		new Vec3(94.77945, -393.581, 40.0),
+		new Vec3(67.89926, -314.7067, 40.0),
+		new Vec3(9.200182, -253.63564, 40.0),
+		new Vec3(8.610334, -209.85616, 40.0),
+		new Vec3(71.17022, -157.58075, 40.0),
+		new Vec3(157.13065, -94.73383, 40.0),
+		new Vec3(248.62645, -26.171307, 35.0),
+		new Vec3(365.0304, 70.293655, 30.0),
+		new Vec3(451.59625, 155.54239, 25.0),
+		new Vec3(537.0101, 246.38788, 20.0),
+		new Vec3(614.5287, 350.36176, 15.0),
+		new Vec3(684.8281, 435.5135, 10.0),
+		new Vec3(689.4689, 473.8651, 5.0),
+		new Vec3(614.2683, 527.2068, 5.0),
+		new Vec3(535.38586, 578.5085, 5.0),
+		new Vec3(487.19922, 601.7118, 5.0),
+		new Vec3(448.80707, 575.38544, 5.0),
+	};
 }

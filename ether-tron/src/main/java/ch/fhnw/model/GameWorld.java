@@ -1,10 +1,17 @@
 package ch.fhnw.model;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import ch.fhnw.ether.controller.IController;
 import ch.fhnw.ether.controller.event.IEventScheduler;
+import ch.fhnw.ether.formats.IModelReader.Options;
+import ch.fhnw.ether.formats.obj.ObjReader;
 import ch.fhnw.ether.scene.IScene;
 import ch.fhnw.ether.scene.camera.Camera;
 import ch.fhnw.ether.scene.camera.ICamera;
@@ -23,6 +30,10 @@ public class GameWorld {
     private List<IMesh> blocks = new ArrayList<>();
     private List<IMesh> powerUps = new ArrayList<>();
     private IController controller;
+    DatagramSocket udpSocket;
+    
+    private byte[] buffer = new byte[1024];
+    private DatagramPacket packet = new DatagramPacket( buffer, buffer.length) ;
     
     public static final int IDLE = 0;
     public static final int USER_INPUT = 1;
@@ -30,9 +41,10 @@ public class GameWorld {
     private String movement = null;
     float c = 0;    
     
-    public GameWorld(IController controller, Player p) {
+    public GameWorld(IController controller, Player p, DatagramSocket udpSocket) {
         this.controller = controller;
         this.mplayer = p;
+        this.udpSocket = udpSocket;
     }
     
     
@@ -41,11 +53,16 @@ public class GameWorld {
         camera.setPosition(pos);
     }
     
-    public void createWorld(IScene scene, IView view) {
+    public void createWorld(IScene scene, IView view) throws IOException {
         System.out.println("Create Game world");
         
         // Add player
         for(Player p : this.players) {
+            final URL obj = getClass().getResource("/models/cube.obj");
+            final List<IMesh> meshes = new ArrayList<>();
+            new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().forEach(mesh -> meshes.add(mesh));
+            final List<IMesh> merged = MeshUtilities.mergeMeshes(meshes);
+            //p.setMesh(merged.get(0));
             this.controller.getScene().add3DObject(p.getMesh());
         }
         
@@ -65,6 +82,13 @@ public class GameWorld {
                 // Read server input
                 // Update players
                 // render World
+                try {
+                    String data = getUDPData();
+                } catch (SocketTimeoutException e) {
+                    System.out.println();
+                } catch(Exception ex) {
+                    System.out.println("ERROR");
+                }
                 switch(GameWorld.STATE) {
                 case GameWorld.IDLE:
                     c = 0;
@@ -147,6 +171,15 @@ public class GameWorld {
     
     public void moveRight() {
         this.movement = "RIGHT";
+    }
+    
+    
+    private String getUDPData() throws IOException {
+        this.udpSocket.receive(this.packet);
+        this.packet.getData();
+        System.out.println(this.packet.getData().toString());
+        return this.packet.getData().toString();
+        
     }
     
     

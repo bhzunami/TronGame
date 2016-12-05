@@ -2,9 +2,10 @@ package ch.fhnw.main;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.DatagramSocket;
 import java.net.Socket;
+import java.util.HashMap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,44 +35,21 @@ public class TronGame {
             return;
         }
         
+        DatagramSocket udpSocket = new DatagramSocket();
+        udpSocket.setSoTimeout(10);
         Player p = new Player(args[0]);
-        sendPlayer(p, 7606);
-        
+       
         p.setPosition(new Vec3(0,0,0));
-        
-        // Connect to server
-//        Socket tcpSocket = new Socket(args[1], 6789);
-//        DataOutputStream outToServer = new DataOutputStream(tcpSocket.getOutputStream());
-//        String m = "New player: "+p.getId();
-//        outToServer.writeBytes(m + '\n');
-//        tcpSocket.close();
-
-        
-        // players.add(p2);
-//        BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
-//        DatagramSocket udpSocekt = new DatagramSocket();
-//        InetAddress IPAddress = InetAddress.getByName("localhost");
-//        byte[] sendData = new byte[1024];
-//        String sentence = " ";
-//        while(!sentence.isEmpty()) {
-//            sentence = inFromUser.readLine();
-//            sendData = sentence.getBytes();
-//            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 7604);
-//            udpSocekt.send(sendPacket);
-//        }
-//     
-//        udpSocekt.close();
-
-        new TronGame(p);
+        new TronGame(p, udpSocket);
 
     }
 
-    public TronGame(Player player) {
+    public TronGame(Player player, DatagramSocket socket) {
         Platform.get().init();
 
         // Create controller
         IController controller = new DefaultController();
-        GameWorld gameWorld = new GameWorld(controller, player);
+        GameWorld gameWorld = new GameWorld(controller, player, socket);
 
         ITool evenntHandler = new EventHandler(controller, new NavigationTool(controller), gameWorld);
 
@@ -86,25 +64,57 @@ public class TronGame {
             
             // Set game world objects
             gameWorld.addPlayer(player);
-            gameWorld.createWorld(scene, view);
+            try {
+                gameWorld.createWorld(scene, view);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             gameWorld.run();
 
         });
-
-        Platform.get().run();
         
+        try {
+            // Update ID
+            player.setId(sendPlayer(player, 7606));
+        } catch(JsonProcessingException ex) {
+            System.out.println("Could not read ansewr from server");
+        } catch(IOException ex) {
+            System.out.println("Could not connect to server");
+        }
+        
+        // Start main game loop
+        Platform.get().run();
     }
     
-    
-    private static void sendPlayer(Player player, int port) throws JsonProcessingException, IOException {
+    @SuppressWarnings("unchecked")
+    private String sendPlayer(Player player, int port) throws JsonProcessingException, IOException {
         Socket clientSocket = new Socket("localhost", port);
         OutputStream out = clientSocket.getOutputStream();
         InputStream in = clientSocket.getInputStream();
-        out.write(mapper.writeValueAsString(player).getBytes());
+        
+        HashMap<String, Object> playerMap = new HashMap<>();
+        playerMap.put("name", player.getName());
+        playerMap.put("port", port);
+        
+        
+        HashMap<String, Object> joinRequest = new HashMap<>();
+        joinRequest.put("action", "join");
+        joinRequest.put("payload", playerMap);
+        
+        out.write(mapper.writeValueAsString(joinRequest).getBytes());
         out.flush();
-        player = mapper.readValue(in, Player.class);
-        System.out.println("Player: " + player.getId() +" name: " +player.getName());
+        
+        HashMap<String, Object> response = new HashMap<>();
+        response = mapper.readValue(in, response.getClass());
+        
+        if(response.get("error") != null) {
+            System.out.println("Error");
+        }
+        String id = ((HashMap<String, String>)response.get("response")).get("id");
+        System.out.println("Player: " +id);
         clientSocket.close();
+        return id;
     }
 
 }

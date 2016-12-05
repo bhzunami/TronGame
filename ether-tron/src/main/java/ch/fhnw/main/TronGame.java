@@ -36,7 +36,7 @@ public class TronGame {
         }
         
         DatagramSocket udpSocket = new DatagramSocket();
-        udpSocket.setSoTimeout(10);
+        udpSocket.setSoTimeout(100);
         Player p = new Player(args[0]);
         
         String serverAddress = args[1];

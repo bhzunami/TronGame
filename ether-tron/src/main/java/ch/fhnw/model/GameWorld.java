@@ -5,6 +5,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -178,13 +180,17 @@ public class GameWorld {
         this.udpSocket.receive(this.packet);
         this.packet.getData();
         byte[] data = this.packet.getData();
-        pos1 := ByteBuffer.wrap(bytes, 0,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-        pos2 := ByteBuffer.wrap(bytes, 4,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-        pos3 := ByteBuffer.wrap(bytes, 8,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-        dir1 := ByteBuffer.wrap(bytes,12,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-        dir2 := ByteBuffer.wrap(bytes,16,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-        dir3 := ByteBuffer.wrap(bytes,20,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        float pos1 = ByteBuffer.wrap(data, 0,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        float pos2 = ByteBuffer.wrap(data, 4,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        float pos3 = ByteBuffer.wrap(data, 8,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        float dir1 = ByteBuffer.wrap(data,12,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        float dir2 = ByteBuffer.wrap(data,16,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        float dir3 = ByteBuffer.wrap(data,20,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
         // log dirs and poss
+        System.out.println("pos1: " +pos1);
+        System.out.println("pos2: " +pos2);
+        System.out.println("dir2: " +dir2);
+        System.out.println("dir3: " +dir3);
         return this.packet.getData().toString();
 
     }

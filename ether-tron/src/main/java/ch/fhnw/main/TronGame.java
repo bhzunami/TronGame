@@ -38,13 +38,15 @@ public class TronGame {
         DatagramSocket udpSocket = new DatagramSocket();
         udpSocket.setSoTimeout(10);
         Player p = new Player(args[0]);
+        
+        String serverAddress = args[1];
        
         p.setPosition(new Vec3(0,0,0));
-        new TronGame(p, udpSocket);
+        new TronGame(p, udpSocket, serverAddress);
 
     }
 
-    public TronGame(Player player, DatagramSocket socket) {
+    public TronGame(Player player, DatagramSocket socket, String serverAddress) {
         Platform.get().init();
 
         // Create controller
@@ -76,7 +78,7 @@ public class TronGame {
         
         try {
             // Update ID
-            player.setId(sendPlayer(player, 7606));
+            player.setId(sendPlayer(player, socket, serverAddress));
         } catch(JsonProcessingException ex) {
             System.out.println("Could not read ansewr from server");
         } catch(IOException ex) {
@@ -88,29 +90,35 @@ public class TronGame {
     }
     
     @SuppressWarnings("unchecked")
-    private String sendPlayer(Player player, int port) throws JsonProcessingException, IOException {
-        Socket clientSocket = new Socket("localhost", port);
+    private String sendPlayer(Player player, DatagramSocket socket, String serverAddress) throws JsonProcessingException, IOException {
+        // TCP Socket connection
+        Socket clientSocket = new Socket(serverAddress, 7606);
         OutputStream out = clientSocket.getOutputStream();
         InputStream in = clientSocket.getInputStream();
         
+        // Prepare data to send
         HashMap<String, Object> playerMap = new HashMap<>();
         playerMap.put("name", player.getName());
-        playerMap.put("port", port);
-        
+        playerMap.put("port", socket.getLocalPort());
+        playerMap.put("host", socket.getLocalAddress().getHostAddress());
         
         HashMap<String, Object> joinRequest = new HashMap<>();
         joinRequest.put("action", "join");
         joinRequest.put("payload", playerMap);
         
+        // Write player data to Server as TCP
         out.write(mapper.writeValueAsString(joinRequest).getBytes());
         out.flush();
         
+        // Get player id
         HashMap<String, Object> response = new HashMap<>();
         response = mapper.readValue(in, response.getClass());
         
+        // Check if error
         if(response.get("error") != null) {
             System.out.println("Error");
         }
+        
         String id = ((HashMap<String, String>)response.get("response")).get("id");
         System.out.println("Player: " +id);
         clientSocket.close();

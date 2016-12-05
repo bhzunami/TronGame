@@ -458,6 +458,7 @@ public class URLAudioSource extends AbstractFrameSource implements Runnable, IDi
 	}
 
 	public void getMidiEvents(Collection<MidiEvent> result) {
+		result.clear();
 		result.addAll(notes);
 	}
 }

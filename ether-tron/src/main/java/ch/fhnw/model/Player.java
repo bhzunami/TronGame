@@ -1,30 +1,31 @@
 package ch.fhnw.model;
 
 import java.io.Serializable;
-import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
-import ch.fhnw.ether.scene.mesh.IMesh.Queue;
-import ch.fhnw.ether.scene.mesh.material.ColorMaterial;
-import ch.fhnw.util.color.RGBA;
 import ch.fhnw.util.math.Vec3;
 
 public class Player implements Serializable {
 
     private static final long serialVersionUID = 3003306163179867285L;
 
+    @JsonIgnore
     private IMesh mesh;
     private String name;
     private String id;
     
     
+    public Player() {}
+    
     public Player(String name) {
         this.name = name;
-        this.id = UUID.randomUUID().toString();
         this.mesh = MeshUtilities.createCube();
     }
     
+    @JsonIgnore
     public Vec3 getPosition() {
         return this.mesh.getPosition();
     }
@@ -49,6 +50,7 @@ public class Player implements Serializable {
         this.mesh = mesh;
     }
     
+    @JsonIgnore
     public IMesh getMesh() {
         return this.mesh;
     }

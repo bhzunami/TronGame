@@ -73,7 +73,7 @@ import ch.fhnw.util.TextUtilities;
 public class ParameterWindow {
 	private static final Log log = Log.create();
 
-	public enum Flag {EXIT_ON_CLOSE,CLOSE_ON_STOP}
+	public enum Flag {EXIT_ON_CLOSE,CLOSE_ON_STOP,HIDE_ON_STOP}
 
 	static final float   S            = 100000f;
 	static final int     NUM_TICKS    = 5;
@@ -490,8 +490,13 @@ public class ParameterWindow {
 						@Override
 						public void run() {
 							if(!(program.getTarget().isRendering())) {
-								dispose(result);
-								frame.get().dispose();
+								if(hasFlag(Flag.HIDE_ON_STOP, flags))
+									frame.get().setVisible(false);
+								if(hasFlag(Flag.CLOSE_ON_STOP, flags)) {
+									dispose(result);
+									frame.get().dispose();
+								}
+								stopped();
 								return;
 							}
 							boolean programChange = false;
@@ -520,6 +525,9 @@ public class ParameterWindow {
 				return result;
 			}
 		});
+	}
+
+	protected void stopped() {
 	}
 
 	private static void dispose(Control c) {

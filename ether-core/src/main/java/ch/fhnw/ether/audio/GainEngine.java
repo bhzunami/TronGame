@@ -58,6 +58,7 @@ public class GainEngine {
 		setDecaySpeed(decaySpeed);
 		setJumpLevel(jumpLevel);
 		this.smoothedGain = MAX_LEVEL;
+		this.history.fill(0.2f);
 	}
 
 	public double getSustainSpeed() {

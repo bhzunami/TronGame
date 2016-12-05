@@ -119,7 +119,7 @@ import ch.fhnw.util.math.MathUtilities;
 
 	 @Override
 	 public void init(IAudioRenderTarget target) {
-		 smooth = new Smooth(centers.length, 0.05f);
+		 smooth = new Smooth(centers.length, 0.01f);
 		 power  = new float[centers.length];
 		 filters = new ButterworthFilter[size][strength];
 
@@ -136,6 +136,11 @@ import ch.fhnw.util.math.MathUtilities;
 	 }
 
 	 public float[] power(float[] values) {
+		 System.arraycopy(power, 0, values, 0, Math.min(values.length, power.length));
+		 return values;
+	 }
+
+	 public float[] powerSmooth(float[] values) {
 		 return smooth.get(values);
 	 }
 
@@ -150,11 +155,11 @@ import ch.fhnw.util.math.MathUtilities;
 			 float[] samples = frame.getMonoSamples().clone();
 			 for(int i = 0; i < filters[band].length; i++)
 				 filters[band][i].processBand(samples);
-			 power[band] = AudioUtilities.energy(samples) * centers.length;
+			 power[band] = MathUtilities.clamp(AudioUtilities.energy(samples) * centers.length, 0, 1);
 		 }
-		 smooth.update(target.getTime(), power);
+		 smooth.update(frame.playOutTime, power);
 		 clear();
-		 column(MathUtilities.normalize(power.clone(), 0, 1), RGB.WHITE);
+		 column(power, 0, 1, RGB.WHITE);
 	 }	
 	 
 	 @Override

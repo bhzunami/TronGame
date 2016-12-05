@@ -37,7 +37,6 @@ public class Smooth {
 	private final float[] values;
 	private final double  decay;
 	private double        lastUpdate = -1;
-	private double        max;
 	
 	public Smooth(int nChannels, double decayInSecs) {
 		this.values = new float[nChannels];
@@ -45,19 +44,14 @@ public class Smooth {
 	}
 
 	public synchronized void update(double time, float ... values) {
-		max *= 0.99;
-		for(float v : values)
-			max = Math.max(max, v);
-		if(max == 0 || Double.isNaN(max)) max = 0.01f;
-		
 		if(lastUpdate > 0) {
-			float gain = (float)Math.pow(decay, time - lastUpdate);
+			float gain = MathUtilities.clamp((float)Math.pow(decay, time - lastUpdate), 0, 1);
 			for(int band = 0; band < values.length; band++)
-				this.values[band] = (float) MathUtilities.clamp(Math.max(this.values[band] * gain, values[band]) / max, 0, 1);
+				this.values[band] = MathUtilities.lerp(this.values[band], values[band], gain);
 			lastUpdate = time;
 		} else {
 			for(int band = 0; band < values.length; band++)
-				this.values[band] = (float) MathUtilities.clamp(this.values[band] / max, 0, 1);
+				this.values[band] = values[band];
 			lastUpdate = time;
 		}
 	}

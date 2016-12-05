@@ -48,7 +48,8 @@ public abstract class AbstractRenderCommand<T extends IRenderTarget<?>> extends 
 	private boolean                          skip    = false;
 	private final AtomicReference<ImageData> buffer  = new AtomicReference<ImageData>();
 	private int                              plotX;
-
+	private boolean                          pausePlot;
+	
 	protected AbstractRenderCommand(Parameter ... parameters) {
 		super(parameters);
 	}
@@ -121,7 +122,7 @@ public abstract class AbstractRenderCommand<T extends IRenderTarget<?>> extends 
 	public void clear(RGB color) {
 		ImageData buffer = this.buffer.get();
 		if(buffer == null) return;
-		plotX++;
+		if(!(pausePlot)) plotX++;
 		if(plotX >= buffer.width) plotX = 0;
 		int off= plotX * 3;
 		byte br = (byte) (color.r*255);
@@ -308,5 +309,9 @@ public abstract class AbstractRenderCommand<T extends IRenderTarget<?>> extends 
 			 buffer.data[off+2] = bb;
 			 off += buffer.bytesPerLine;
 		 }
-	 }	
+	 }
+
+	public void setPausePlot(boolean pause) {
+		this.pausePlot = pause;
+	}	
 }

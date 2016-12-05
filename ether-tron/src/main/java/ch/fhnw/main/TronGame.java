@@ -1,16 +1,13 @@
 package ch.fhnw.main;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.fhnw.ether.controller.DefaultController;
 import ch.fhnw.ether.controller.IController;
@@ -27,6 +24,8 @@ import ch.fhnw.model.Player;
 import ch.fhnw.util.math.Vec3;
 
 public class TronGame {
+    
+    private static ObjectMapper mapper = new ObjectMapper();
 
     public static void main(String[] args) throws IOException {
         
@@ -36,6 +35,8 @@ public class TronGame {
         }
         
         Player p = new Player(args[0]);
+        sendPlayer(p, 7606);
+        
         p.setPosition(new Vec3(0,0,0));
         
         // Connect to server
@@ -91,6 +92,19 @@ public class TronGame {
         });
 
         Platform.get().run();
+        
+    }
+    
+    
+    private static void sendPlayer(Player player, int port) throws JsonProcessingException, IOException {
+        Socket clientSocket = new Socket("localhost", port);
+        OutputStream out = clientSocket.getOutputStream();
+        InputStream in = clientSocket.getInputStream();
+        out.write(mapper.writeValueAsString(player).getBytes());
+        out.flush();
+        player = mapper.readValue(in, Player.class);
+        System.out.println("Player: " + player.getId() +" name: " +player.getName());
+        clientSocket.close();
     }
 
 }

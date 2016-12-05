@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -55,9 +56,10 @@ class GLFWPlatform implements IPlatform {
 	private final GLFWErrorCallback errorCallback;
 	private final IImageSupport imageSupport;
 
-	private final Thread mainThread;
+	private final Thread      mainThread;
 	private List<Runnable>    shutdownTasks = new LinkedList<>();
 	private List<IDisposable> disposeTasks  = new LinkedList<>();
+	private AtomicBoolean     exiting       = new AtomicBoolean();
 
 	public GLFWPlatform() {
 		this(new STBImageSupport());
@@ -103,10 +105,12 @@ class GLFWPlatform implements IPlatform {
 
 	@Override
 	public final void exit() {
-		exitInternal();
-		errorCallback.free();
-		GLFW.glfwTerminate();
-		System.exit(0);
+		if(!(exiting.getAndSet(true))) {
+			exitInternal();
+			errorCallback.free();
+			GLFW.glfwTerminate();
+			System.exit(0);
+		}
 	}
 
 	@Override

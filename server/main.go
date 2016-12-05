@@ -134,6 +134,14 @@ func serveUDP() {
 			_ = id
 			state.Connection.Write(posBytes[:])
 			state.Connection.Write(dirBytes[:])
+
+			state.Position = [3]float32{
+				state.Position[0] + 1,
+				state.Position[1] + 1,
+				state.Position[2] + 1,
+			}
+
+			Players.Store[id] = state
 		}
 		Players.Lock.RUnlock()
 	}

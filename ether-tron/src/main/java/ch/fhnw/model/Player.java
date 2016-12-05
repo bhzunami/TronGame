@@ -1,5 +1,6 @@
 package ch.fhnw.model;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -20,9 +21,10 @@ public class Player implements Serializable {
     
     public Player() {}
     
-    public Player(String name) {
+    public Player(String name) throws IOException {
         this.name = name;
         this.mesh = MeshUtilities.createCube();
+
     }
     
     @JsonIgnore
@@ -36,6 +38,10 @@ public class Player implements Serializable {
     
     public String getId() {
         return this.id;
+    }
+    
+    public void setId(String id) {
+        this.id = id;
     }
     
     public String getName() {

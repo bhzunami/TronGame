@@ -22,7 +22,7 @@ import ch.fhnw.util.math.Mat4;
 import ch.fhnw.util.math.Vec3;
 
 public class GameWorld {
-    
+
     // The player which plays on this view
     private Player mplayer;
     private List<Player> players = new ArrayList<>();
@@ -31,31 +31,31 @@ public class GameWorld {
     private List<IMesh> powerUps = new ArrayList<>();
     private IController controller;
     DatagramSocket udpSocket;
-    
+
     private byte[] buffer = new byte[1024];
     private DatagramPacket packet = new DatagramPacket( buffer, buffer.length) ;
-    
+
     public static final int IDLE = 0;
     public static final int USER_INPUT = 1;
     public static int STATE;
     private String movement = null;
-    float c = 0;    
-    
+    float c = 0;
+
     public GameWorld(IController controller, Player p, DatagramSocket udpSocket) {
         this.controller = controller;
         this.mplayer = p;
         this.udpSocket = udpSocket;
     }
-    
-    
+
+
     public void playerMoved(Vec3 pos) {
         ICamera camera = this.controller.getScene().getCameras().get(0);
         camera.setPosition(pos);
     }
-    
+
     public void createWorld(IScene scene, IView view) throws IOException {
         System.out.println("Create Game world");
-        
+
         // Add player
         for(Player p : this.players) {
             final URL obj = getClass().getResource("/models/cube.obj");
@@ -65,16 +65,16 @@ public class GameWorld {
             //p.setMesh(merged.get(0));
             this.controller.getScene().add3DObject(p.getMesh());
         }
-        
+
         // Create and add camera to the main player
         Vec3 pos = this.mplayer.getPosition();
         ICamera camera = new Camera(new Vec3(pos.x, pos.y -3, pos.z + 2), Vec3.ZERO);
         controller.getScene().add3DObject(camera);
         controller.setCamera(view, camera);
     }
-    
+
     public void run() {
-       
+
         //while( true ) {
         controller.animate(new IEventScheduler.IAnimationAction() {
             @Override
@@ -93,7 +93,7 @@ public class GameWorld {
                 case GameWorld.IDLE:
                     c = 0;
                     break;
-                    
+
                 case GameWorld.USER_INPUT:
                     handleUserInput(time);
                     controller.viewChanged(controller.getCurrentView());
@@ -101,14 +101,14 @@ public class GameWorld {
                 default:
                         break;
                 }
-                
+
             }
         });
     }
-    
-    
+
+
     private void handleUserInput(double time) {
-        
+
         c += 0.05;
         Vec3 pos = players.get(0).getMesh().getPosition();
         ICamera cam = this.controller.getCamera(controller.getCurrentView());
@@ -117,7 +117,7 @@ public class GameWorld {
         Vec3 ctarget = null;
         Vec3 target = null;
         switch(movement) {
-        
+
         case "FORWARD":
             target = new Vec3(pos.x, pos.y+c, pos.z);
             ctarget = new Vec3(cam_pos.x, cam_pos.y +c , cam_pos.z);
@@ -146,42 +146,49 @@ public class GameWorld {
             break;
         default:
             System.out.println("NO WAY");
-                
+
         }
-       
+
 //        players.get(0).getMesh().setTransform(transfrom);
     }
-    
-    
+
+
     public void addPlayer(Player p) {
         this.players.add(p);
     }
-    
+
     public void moveForward() {
         this.movement = "FORWARD";
     }
-    
+
     public void moveBackward() {
         this.movement = "BACKWARD";
     }
-    
+
     public void moveLeft() {
         this.movement = "LEFT";
     }
-    
+
     public void moveRight() {
         this.movement = "RIGHT";
     }
-    
-    
+
+
     private String getUDPData() throws IOException {
         this.udpSocket.receive(this.packet);
         this.packet.getData();
-        System.out.println(this.packet.getData().toString());
+        byte[] data = this.packet.getData();
+        pos1 := ByteBuffer.wrap(bytes, 0,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        pos2 := ByteBuffer.wrap(bytes, 4,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        pos3 := ByteBuffer.wrap(bytes, 8,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        dir1 := ByteBuffer.wrap(bytes,12,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        dir2 := ByteBuffer.wrap(bytes,16,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        dir3 := ByteBuffer.wrap(bytes,20,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+        // log dirs and poss
         return this.packet.getData().toString();
-        
+
     }
-    
-    
+
+
 
 }

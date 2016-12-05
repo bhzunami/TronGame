@@ -7,12 +7,16 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"sync"
+	"time"
+	"unsafe"
 )
 
 const (
 	TCP_PORT    = `7606`
 	TCP_BUF_CAP = 1024
+	TIME_PERIOD = 8 * time.Millisecond
 )
 
 var (
@@ -22,6 +26,20 @@ var (
 		},
 	}
 )
+
+type PlayerState struct {
+	Connection *net.UDPConn
+	Position   [3]float32
+	Direction  [3]float32
+}
+
+var Players = struct {
+	Lock  *sync.RWMutex
+	Store map[uuid.UUID]PlayerState
+}{
+	Lock:  new(sync.RWMutex),
+	Store: make(map[uuid.UUID]PlayerState),
+}
 
 type JSON []byte
 
@@ -104,14 +122,31 @@ func dispatch(action string, payload JSON) (interface{}, *ErrorResponse) {
 	}
 }
 
+func serveUDP() {
+
+	for {
+		time.Sleep(TIME_PERIOD)
+
+		Players.Lock.RLock()
+		for id, state := range Players.Store {
+			posBytes := *((*[12]byte)(unsafe.Pointer(&state.Position[0])))
+			dirBytes := *((*[12]byte)(unsafe.Pointer(&state.Direction[0])))
+			_ = id
+			state.Connection.Write(posBytes[:])
+			state.Connection.Write(dirBytes[:])
+		}
+		Players.Lock.RUnlock()
+	}
+}
+
 func serveTCP() {
 
 	socket, e := net.Listen(`tcp`, ":"+TCP_PORT)
 	if e != nil {
-		exitOnError(fmt.Errorf("Error listening on port %s: %s", TCP_PORT, e.Error()))
+		exitOnError(fmt.Errorf("Error listening on TCP port %s: %s", TCP_PORT, e.Error()))
 	}
 	defer socket.Close()
-	log.Println("Listening on TCP port", TCP_PORT)
+	log.Println("Serving TCP port", TCP_PORT)
 
 	for {
 
@@ -146,6 +181,7 @@ func serveTCP() {
 
 type JoinRequest struct {
 	Name string `json:"name"`
+	Host string `json:"host"` // for UDP
 	Port int    `json:"port"` // for UDP
 }
 type JoinResponse struct {
@@ -153,9 +189,40 @@ type JoinResponse struct {
 }
 
 func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
-	return JoinResponse{Id: uuid.NewV4().String()}, nil
+
+	res := JoinResponse{}
+	dialString := req.Host + ":" + strconv.Itoa(req.Port)
+
+	addr, e := net.ResolveUDPAddr(`udp`, dialString)
+	if e != nil {
+		return res, &ErrorResponse{
+			Type:    "network",
+			Message: "could not resolve address",
+			Payload: dialString,
+		}
+	}
+
+	conn, e := net.DialUDP(`udp`, nil, addr)
+	if e != nil {
+		return res, &ErrorResponse{
+			Type:    "network",
+			Message: "could not connect to UDP client",
+			Payload: dialString,
+		}
+	}
+	id := uuid.NewV4()
+
+	Players.Lock.Lock()
+	Players.Store[id] = PlayerState{
+		Connection: conn,
+	}
+	Players.Lock.Unlock()
+
+	res.Id = id.String()
+	return res, nil
 }
 
 func main() {
+	go serveUDP()
 	serveTCP()
 }

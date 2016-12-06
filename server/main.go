@@ -36,10 +36,10 @@ type PlayerState struct {
 
 var Players = struct {
 	Lock  *sync.RWMutex
-	Store map[uuid.UUID]PlayerState
+	Store map[uuid.UUID]*PlayerState
 }{
 	Lock:  new(sync.RWMutex),
-	Store: make(map[uuid.UUID]PlayerState),
+	Store: make(map[uuid.UUID]*PlayerState),
 }
 
 type JSON []byte
@@ -133,16 +133,14 @@ func serveUDP() {
 			posBytes := *((*[12]byte)(unsafe.Pointer(&state.Position[0])))
 			dirBytes := *((*[12]byte)(unsafe.Pointer(&state.Direction[0])))
 			_ = id
+
 			state.Connection.Write(posBytes[:])
 			state.Connection.Write(dirBytes[:])
 
-			state.Position = [3]float32{
-				state.Position[0] + 0.05,
-				state.Position[1] + 0,
-				state.Position[2] + 0,
-			}
+			state.Position[0] += 0
+			state.Position[1] += 0.05
+			state.Position[2] += 0
 
-			Players.Store[id] = state
 		}
 		Players.Lock.RUnlock()
 	}
@@ -222,8 +220,9 @@ func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 	id := uuid.NewV4()
 
 	Players.Lock.Lock()
-	Players.Store[id] = PlayerState{
+	Players.Store[id] = &PlayerState{
 		Connection: conn,
+		Position:   [3]float32{0, 0.1, 0},
 	}
 	Players.Lock.Unlock()
 

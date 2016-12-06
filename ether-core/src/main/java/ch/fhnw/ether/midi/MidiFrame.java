@@ -32,14 +32,17 @@
 package ch.fhnw.ether.midi;
 
 import javax.sound.midi.MidiMessage;
+import javax.sound.midi.Track;
 
 import ch.fhnw.ether.media.AbstractFrame;
 
 public class MidiFrame extends AbstractFrame {
 	public final MidiMessage[] messages;
+	public final Track[]       tracks;
 
-	public MidiFrame(double playOutTime, MidiMessage ... messages) {
+	public MidiFrame(double playOutTime, Track[] tracks, MidiMessage[] messages) {
 		super(playOutTime);
 		this.messages = messages;
+		this.tracks   = tracks;
 	}
 }

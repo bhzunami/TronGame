@@ -31,13 +31,14 @@
 
 package ch.fhnw.ether.platform;
 
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.widgets.Display;
 
 import ch.fhnw.util.Log;
 
 final class SWTPlatform extends GLFWPlatform {
 	private static final Log log = Log.create();
-	
+
 	public SWTPlatform() {
 		super(new SWTImageSupport());
 	}
@@ -61,7 +62,14 @@ final class SWTPlatform extends GLFWPlatform {
 
 	@Override
 	protected void waitForEvents() {
-		if (!Display.getDefault().readAndDispatch())
-			Display.getDefault().sleep();
+		try {
+			if (!Display.getDefault().readAndDispatch())
+				Display.getDefault().sleep();
+		} catch(SWTException e) {
+			if(e.getMessage() != null && e.getMessage().toLowerCase().contains("dispose")) 
+				return;
+			else
+				throw e;
+		}
 	}
 }

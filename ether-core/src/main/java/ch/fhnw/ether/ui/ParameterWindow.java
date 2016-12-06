@@ -531,6 +531,7 @@ public class ParameterWindow {
 	}
 
 	private static void dispose(Control c) {
+		if(c.isDisposed()) return;
 		if(c instanceof Composite) {
 			for(Control cmp : ((Composite)c).getChildren()) {
 				Object parmui = cmp.getData("paramui");

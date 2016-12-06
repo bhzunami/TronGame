@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/satori/go.uuid"
 	"log"
 	"net"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -136,9 +137,9 @@ func serveUDP() {
 			state.Connection.Write(dirBytes[:])
 
 			state.Position = [3]float32{
-				state.Position[0] + 1,
-				state.Position[1] + 1,
-				state.Position[2] + 1,
+				state.Position[0] + 0.05,
+				state.Position[1] + 0,
+				state.Position[2] + 0,
 			}
 
 			Players.Store[id] = state

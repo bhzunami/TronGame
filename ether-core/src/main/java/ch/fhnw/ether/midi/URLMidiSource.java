@@ -63,7 +63,8 @@ public class URLMidiSource extends AbstractFrameSource implements IMidiSource {
 	private       long              curtime    = 0;
 	private       int               numPlays;
 	private       double            startTime  = -1;
-	private final List<MidiMessage> msgs = new ArrayList<>();
+	private final List<MidiMessage> currMsgs   = new ArrayList<>();
+	private final List<Track>       currTracks = new ArrayList<>();
 	private final double            length;
 	int                             count;
 
@@ -181,15 +182,21 @@ public class URLMidiSource extends AbstractFrameSource implements IMidiSource {
 						byte[] data = ((MetaMessage) msg).getData();
 						mpq = ((data[0] & 0xff) << 16) | ((data[1] & 0xff) << 8) | (data[2] & 0xff);
 					}
-			} else
-				msgs.add(msg);
-			if(setFrame && !msgs.isEmpty())
+			} else {
+				currMsgs.add(msg);
+				currTracks.add(tracks[seltrack]);
+			}
+			if(setFrame && !currMsgs.isEmpty())
 				break;
 		}
-		MidiFrame frame = new MidiFrame(startTime + (curtime / AbstractMediaTarget.SEC2US), msgs.toArray(new MidiMessage[msgs.size()]));
+		MidiFrame frame = new MidiFrame(startTime + (curtime / AbstractMediaTarget.SEC2US), 
+				currTracks.toArray(new Track[currTracks.size()]),
+				currMsgs.toArray(new MidiMessage[currMsgs.size()])
+				);
 		((IMidiRenderTarget)target).setFrame(this, frame);
 		frame.setLast(numPlays <= 0);
-		msgs.clear();
+		currMsgs.clear();
+		currTracks.clear();
 	}
 
 	@Override

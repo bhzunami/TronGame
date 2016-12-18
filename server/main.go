@@ -20,7 +20,7 @@ const (
 	TCP_BUF_CAP    = 1024
 	UDP_BUF_CAP    = 1024
 	TIME_PERIOD    = 17 * time.Millisecond // ~60fps
-	TIMEOUT_PERIOD = 30 * time.Second
+	PLAYER_TIMEOUT = 10 * time.Second
 )
 
 var (
@@ -79,67 +79,14 @@ type ErrorResponse struct {
 	Payload interface{} `json:"payload"`
 }
 
-type TcpRequest struct {
-	Action  string `json:"action"`
-	Payload JSON   `json:"payload"`
-}
-
-func decodeRequest(conn net.Conn) (string, JSON, *ErrorResponse) {
-
-	buffer := TcpByteBufferPool.Get().([]byte)
-	defer TcpByteBufferPool.Put(buffer)
-
-	n, e := conn.Read(buffer)
-	if e != nil {
-		return "", nil, &ErrorResponse{
-			Type:    "network",
-			Message: "failed reading from socket",
-			Payload: nil,
-		}
-	}
-
-	payload := buffer[:n]
-	request := TcpRequest{}
-	if e := json.Unmarshal(payload, &request); e != nil {
-		return "", nil, &ErrorResponse{
-			Type:    "request",
-			Message: "failed decoding JSON",
-			Payload: string(payload),
-		}
-
-	}
-
-	return request.Action, request.Payload, nil
-}
-
-func dispatch(action string, payload JSON) (interface{}, *ErrorResponse) {
-	switch action {
-	case "join":
-		joinReq := JoinRequest{}
-		if e := json.Unmarshal(payload, &joinReq); e != nil {
-			return nil, &ErrorResponse{
-				Type:    "request",
-				Message: "failed decoding JSON join request",
-				Payload: string(payload),
-			}
-		}
-		return HandleJoin(joinReq)
-	}
-	return nil, &ErrorResponse{
-		Type:    "request",
-		Message: "no such action",
-		Payload: action,
-	}
-}
-
 func gcPlayers() {
 
 	for {
-		time.Sleep(TIMEOUT_PERIOD)
+		time.Sleep(PLAYER_TIMEOUT)
 		now := time.Now()
 		Players.Lock.Lock()
 		for id, state := range Players.Store {
-			if state.LastPing.Before(now.Add(-TIMEOUT_PERIOD)) {
+			if state.LastPing.Before(now.Add(-PLAYER_TIMEOUT)) {
 				log.Println("Player GC:", state)
 				delete(Players.Store, id)
 			}
@@ -179,6 +126,7 @@ const (
 	KeyBackward byte = 0x02
 	KeyLeft     byte = 0x04
 	KeyRight    byte = 0x08
+	KeySpace    byte = 0x10
 )
 
 type PlayerUpdate struct {
@@ -225,16 +173,42 @@ func readPlayerKeys() {
 		}
 		ps.LastPing = time.Now()
 		if km&KeyForward == KeyForward {
-			ps.Position[0] += 0.5
+			ps.Position[0] += 1
 		}
 		if km&KeyBackward == KeyBackward {
-			ps.Position[0] -= 0.5
-		}
-		if km&KeyLeft == KeyLeft {
-			ps.Position[1] += 0.5
+			ps.Position[0] -= 1
 		}
 		if km&KeyRight == KeyRight {
-			ps.Position[1] -= 0.5
+			ps.Position[1] += 1
+			if ps.Direction[0] < 1 {
+				ps.Direction[0] += 0.1
+			}
+			if ps.Direction[1] < 1 {
+				ps.Direction[1] += 0.1
+			}
+		} else {
+			if ps.Direction[0] > 0 {
+				ps.Direction[0] -= 0.1
+			}
+			if ps.Direction[1] > 0 {
+				ps.Direction[1] -= 0.1
+			}
+		}
+		if km&KeyLeft == KeyLeft {
+			ps.Position[1] -= 1
+			if ps.Direction[0] > -1 {
+				ps.Direction[0] -= 0.1
+			}
+			if ps.Direction[1] > -1 {
+				ps.Direction[1] -= 0.1
+			}
+		} else {
+			if ps.Direction[0] < 0 {
+				ps.Direction[0] += 0.1
+			}
+			if ps.Direction[1] < 0 {
+				ps.Direction[1] += 0.1
+			}
 		}
 		Players.Lock.Unlock()
 	}
@@ -262,17 +236,23 @@ func serveTCP() {
 
 		action, payload, err := decodeRequest(conn)
 		if err != nil {
-			json.NewEncoder(conn).Encode(GeneralResponse{Error: err})
+			if e := json.NewEncoder(conn).Encode(GeneralResponse{Error: err}); e != nil {
+				log.Println("Failed encoding JSON:", e)
+			}
 			conn.Close()
 			continue
 		}
 
 		go func() {
-			res, err := dispatch(action, payload)
+			res, err := dispatch(action, payload, conn)
 			if err != nil {
-				json.NewEncoder(conn).Encode(GeneralResponse{Error: err})
+				if e := json.NewEncoder(conn).Encode(GeneralResponse{Error: err}); e != nil {
+					log.Println("Failed encoding JSON:", e)
+				}
 			} else {
-				json.NewEncoder(conn).Encode(GeneralResponse{Response: res})
+				if e := json.NewEncoder(conn).Encode(GeneralResponse{Response: res}); e != nil {
+					log.Println("Failed encoding JSON:", e)
+				}
 			}
 			conn.Close()
 		}()
@@ -281,20 +261,38 @@ func serveTCP() {
 }
 
 type JoinRequest struct {
-	Name string `json:"name"`
-	Host string `json:"host"` // for UDP
-	Port int    `json:"port"` // for UDP
+	Conn net.Conn `json:"-"`
+	Name string   `json:"name"`
+	Port int      `json:"port"` // for UDP
 }
 type JoinResponse struct {
 	Id string `json:"id"`
 }
 
+type TcpRequest struct {
+	Action  string `json:"action"`
+	Payload JSON   `json:"payload"`
+}
+
 func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 
-	log.Println(req.Host)
+	host := ""
+
+	if ra, ok := req.Conn.RemoteAddr().(*net.TCPAddr); ok {
+		host = ra.IP.String()
+	}
 
 	res := JoinResponse{}
-	dialString := req.Host + ":" + strconv.Itoa(req.Port)
+
+	if host == "" {
+		return res, &ErrorResponse{
+			Type:    "network",
+			Message: "could not resolve remote address",
+			Payload: "",
+		}
+	}
+
+	dialString := host + ":" + strconv.Itoa(req.Port)
 
 	addr, e := net.ResolveUDPAddr(`udp`, dialString)
 	if e != nil {
@@ -318,12 +316,61 @@ func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 	Players.Lock.Lock()
 	Players.Store[id] = &PlayerState{
 		Connection: conn,
-		Position:   [3]float32{0, 0.1, 0},
+		Position:   [3]float32{0, 0, 0},
+		Direction:  [3]float32{1, 0, 0},
 	}
 	Players.Lock.Unlock()
 
 	res.Id = id.String()
 	return res, nil
+}
+
+func decodeRequest(conn net.Conn) (string, JSON, *ErrorResponse) {
+
+	buffer := TcpByteBufferPool.Get().([]byte)
+	defer TcpByteBufferPool.Put(buffer)
+
+	n, e := conn.Read(buffer)
+	if e != nil {
+		return "", nil, &ErrorResponse{
+			Type:    "network",
+			Message: "failed reading from socket",
+			Payload: nil,
+		}
+	}
+
+	payload := buffer[:n]
+	request := TcpRequest{}
+	if e := json.Unmarshal(payload, &request); e != nil {
+		return "", nil, &ErrorResponse{
+			Type:    "request",
+			Message: "failed decoding JSON",
+			Payload: string(payload),
+		}
+
+	}
+
+	return request.Action, request.Payload, nil
+}
+
+func dispatch(action string, payload JSON, conn net.Conn) (interface{}, *ErrorResponse) {
+	switch action {
+	case "join":
+		joinReq := JoinRequest{Conn: conn}
+		if e := json.Unmarshal(payload, &joinReq); e != nil {
+			return nil, &ErrorResponse{
+				Type:    "request",
+				Message: "failed decoding JSON join request",
+				Payload: string(payload),
+			}
+		}
+		return HandleJoin(joinReq)
+	}
+	return nil, &ErrorResponse{
+		Type:    "request",
+		Message: "no such action",
+		Payload: action,
+	}
 }
 
 func main() {

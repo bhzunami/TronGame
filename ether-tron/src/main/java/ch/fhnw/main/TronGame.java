@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,23 +39,24 @@ public class TronGame {
             return;
         }
         
-        DatagramSocket udpSocket = new DatagramSocket();
-        udpSocket.setSoTimeout(10);
         Player p = new Player(args[0]);
         
         String serverAddress = args[1];
-       
+        DatagramSocket udpSocket = new DatagramSocket();
+        udpSocket.setSoTimeout(5);
+
+
         p.setPosition(new Vec3(0,0,0));
         new TronGame(p, udpSocket, serverAddress);
 
     }
 
-    public TronGame(Player player, DatagramSocket socket, String serverAddress) {
+    public TronGame(Player player, DatagramSocket socket, String serverAddress) throws UnknownHostException, SocketException {
         Platform.get().init();
 
         // Create controller
         IController controller = new DefaultController();
-        GameWorld gameWorld = new GameWorld(controller, player, socket);
+        GameWorld gameWorld = new GameWorld(controller, player, socket, serverAddress);
 
         ITool evenntHandler = new EventHandler(controller, new NavigationTool(controller), gameWorld);
 
@@ -100,7 +105,7 @@ public class TronGame {
         HashMap<String, Object> playerMap = new HashMap<>();
         playerMap.put("name", player.getName());
         playerMap.put("port", socket.getLocalPort());
-        playerMap.put("host", socket.getLocalAddress().getHostAddress());
+        playerMap.put("host", InetAddress.getLocalHost()  );
         
         HashMap<String, Object> joinRequest = new HashMap<>();
         joinRequest.put("action", "join");

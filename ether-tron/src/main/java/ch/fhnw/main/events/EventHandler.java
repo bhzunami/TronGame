@@ -64,11 +64,8 @@ public class EventHandler extends AbstractTool {
     public void keyPressed(IKeyEvent e) {
         GameWorld.STATE = GameWorld.USER_INPUT;
         
-        if (e.getKey() == EventHandler.MOVE_FORWARD ||
-            e.getKey() == EventHandler.MOVE_BACKWARD ||
-            e.getKey() == EventHandler.MOVE_LEFT ||
-            e.getKey() == EventHandler.MOVE_RIGHT) {
-            gw.setMovemnet(e.getKey(), 1);
+        if (UserInput.isInEnum(e.getKey())) {
+                gw.setMovemnet(e.getKey(), true);
         }
 
         fallbackTool.keyPressed(e);
@@ -77,11 +74,8 @@ public class EventHandler extends AbstractTool {
     @Override
     public void keyReleased(IKeyEvent e) {
         GameWorld.STATE = GameWorld.IDLE;
-        if (e.getKey() == EventHandler.MOVE_FORWARD ||
-                e.getKey() == EventHandler.MOVE_BACKWARD ||
-                e.getKey() == EventHandler.MOVE_LEFT ||
-                e.getKey() == EventHandler.MOVE_RIGHT) {
-                gw.setMovemnet(e.getKey(), 0);
+        if (UserInput.isInEnum(e.getKey())) {
+                gw.setMovemnet(e.getKey(), false);
             }
         fallbackTool.keyReleased(e);
         

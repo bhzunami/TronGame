@@ -19,8 +19,8 @@ const (
 	UDP_PORT       = 7607
 	TCP_BUF_CAP    = 1024
 	UDP_BUF_CAP    = 1024
-	TIME_PERIOD    = 8 * time.Millisecond
-	TIMEOUT_PERIOD = time.Second
+	TIME_PERIOD    = 17 * time.Millisecond // ~60fps
+	TIMEOUT_PERIOD = 30 * time.Second
 )
 
 var (
@@ -140,7 +140,7 @@ func gcPlayers() {
 		Players.Lock.Lock()
 		for id, state := range Players.Store {
 			if state.LastPing.Before(now.Add(-TIMEOUT_PERIOD)) {
-				log.Println("deleting", state)
+				log.Println("Player GC:", state)
 				delete(Players.Store, id)
 			}
 		}
@@ -154,10 +154,9 @@ func updatePlayerPositions() {
 
 	for {
 		time.Sleep(TIME_PERIOD)
-		now := time.Now()
 
 		Players.Lock.RLock()
-		for _, state := range Players.Store {
+		for id, state := range Players.Store {
 
 			posBytes := *((*[12]byte)(unsafe.Pointer(&state.Position[0])))
 			dirBytes := *((*[12]byte)(unsafe.Pointer(&state.Direction[0])))
@@ -168,16 +167,23 @@ func updatePlayerPositions() {
 			}
 
 			state.Connection.Write(bf[:])
-
-			state.Position[0] += 0
-			state.Position[1] += 0.05
-			state.Position[2] += 0
-
-			state.LastPing = now
+			fmt.Println("sending player position", id.String(), state.Position)
 
 		}
 		Players.Lock.RUnlock()
 	}
+}
+
+const (
+	KeyForward  byte = 0x01
+	KeyBackward byte = 0x02
+	KeyLeft     byte = 0x04
+	KeyRight    byte = 0x08
+)
+
+type PlayerUpdate struct {
+	UUID string `json:"uuid"`
+	Keys byte   `json:"keys"`
 }
 
 func readPlayerKeys() {
@@ -189,16 +195,48 @@ func readPlayerKeys() {
 	log.Println("Listening on UDP port", UDP_PORT)
 
 	bf := make([]byte, 1024, 1024)
-
 	for {
 		n, remote, e := conn.ReadFromUDP(bf)
 		if e != nil {
-			log.Println("Error reading from UDP: ", e)
+			log.Println("Error reading from UDP:", e)
 			continue
 		}
+		_ = remote
 		bs := bf[:n]
-		// handle bs
-		_, _ = bs, remote
+		pu := PlayerUpdate{}
+		if e := json.Unmarshal(bs, &pu); e != nil {
+			log.Println("Error decoding JSON from UDP:", e)
+			continue
+		}
+		km := pu.Keys
+		id, e := uuid.FromString(pu.UUID)
+		if e != nil {
+			log.Println("Error decoding UUID from UDP:", e)
+			continue
+		}
+		if km == 0 {
+			continue
+		}
+		Players.Lock.Lock()
+		ps, ok := Players.Store[id]
+		if !ok {
+			log.Println("No player with UUID:", id)
+			continue
+		}
+		ps.LastPing = time.Now()
+		if km&KeyForward == KeyForward {
+			ps.Position[0] += 0.5
+		}
+		if km&KeyBackward == KeyBackward {
+			ps.Position[0] -= 0.5
+		}
+		if km&KeyLeft == KeyLeft {
+			ps.Position[1] += 0.5
+		}
+		if km&KeyRight == KeyRight {
+			ps.Position[1] -= 0.5
+		}
+		Players.Lock.Unlock()
 	}
 }
 

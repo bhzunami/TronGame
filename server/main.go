@@ -116,6 +116,19 @@ func updatePlayerPositions() {
 			state.Connection.Write(bf[:])
 			fmt.Println("sending player position", id.String(), state.Position)
 
+			if state.Direction[0] > 0 {
+				state.Direction[0] -= 0.01
+			}
+			if state.Direction[1] > 0 {
+				state.Direction[1] -= 0.01
+			}
+			if state.Direction[0] < 0 {
+				state.Direction[0] += 0.01
+			}
+			if state.Direction[1] < 0 {
+				state.Direction[1] += 0.01
+			}
+
 		}
 		Players.Lock.RUnlock()
 	}
@@ -187,12 +200,7 @@ func readPlayerKeys() {
 				ps.Direction[1] += 0.1
 			}
 		} else {
-			if ps.Direction[0] > 0 {
-				ps.Direction[0] -= 0.1
-			}
-			if ps.Direction[1] > 0 {
-				ps.Direction[1] -= 0.1
-			}
+
 		}
 		if km&KeyLeft == KeyLeft {
 			ps.Position[1] -= 1
@@ -203,12 +211,7 @@ func readPlayerKeys() {
 				ps.Direction[1] -= 0.1
 			}
 		} else {
-			if ps.Direction[0] < 0 {
-				ps.Direction[0] += 0.1
-			}
-			if ps.Direction[1] < 0 {
-				ps.Direction[1] += 0.1
-			}
+
 		}
 		Players.Lock.Unlock()
 	}

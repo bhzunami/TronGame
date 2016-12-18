@@ -15,9 +15,12 @@ import (
 )
 
 const (
-	TCP_PORT    = `7606`
-	TCP_BUF_CAP = 1024
-	TIME_PERIOD = 8 * time.Millisecond
+	TCP_PORT       = 7606
+	UDP_PORT       = 7607
+	TCP_BUF_CAP    = 1024
+	UDP_BUF_CAP    = 1024
+	TIME_PERIOD    = 8 * time.Millisecond
+	TIMEOUT_PERIOD = time.Second
 )
 
 var (
@@ -26,12 +29,18 @@ var (
 			return make([]byte, TCP_BUF_CAP, TCP_BUF_CAP)
 		},
 	}
+	UdpByteBufferPool = &sync.Pool{
+		New: func() interface{} {
+			return make([]byte, UDP_BUF_CAP, UDP_BUF_CAP)
+		},
+	}
 )
 
 type PlayerState struct {
 	Connection *net.UDPConn
 	Position   [3]float32
 	Direction  [3]float32
+	LastPing   time.Time
 }
 
 var Players = struct {
@@ -123,37 +132,84 @@ func dispatch(action string, payload JSON) (interface{}, *ErrorResponse) {
 	}
 }
 
-func serveUDP() {
+func gcPlayers() {
+
+	for {
+		time.Sleep(TIMEOUT_PERIOD)
+		now := time.Now()
+		Players.Lock.Lock()
+		for id, state := range Players.Store {
+			if state.LastPing.Before(now.Add(-TIMEOUT_PERIOD)) {
+				log.Println("deleting", state)
+				delete(Players.Store, id)
+			}
+		}
+		Players.Lock.Unlock()
+	}
+}
+
+func updatePlayerPositions() {
+
+	bf := make([]byte, 24, 24)
 
 	for {
 		time.Sleep(TIME_PERIOD)
+		now := time.Now()
 
 		Players.Lock.RLock()
-		for id, state := range Players.Store {
+		for _, state := range Players.Store {
+
 			posBytes := *((*[12]byte)(unsafe.Pointer(&state.Position[0])))
 			dirBytes := *((*[12]byte)(unsafe.Pointer(&state.Direction[0])))
-			_ = id
 
-			state.Connection.Write(posBytes[:])
-			state.Connection.Write(dirBytes[:])
+			for i := 0; i < 12; i++ {
+				bf[i] = posBytes[i]
+				bf[i+12] = dirBytes[i]
+			}
+
+			state.Connection.Write(bf[:])
 
 			state.Position[0] += 0
 			state.Position[1] += 0.05
 			state.Position[2] += 0
+
+			state.LastPing = now
 
 		}
 		Players.Lock.RUnlock()
 	}
 }
 
+func readPlayerKeys() {
+
+	conn, e := net.ListenUDP(`udp`, &net.UDPAddr{Port: UDP_PORT})
+	if e != nil {
+		exitOnError(fmt.Errorf("Error listening on UDP port %s: %s", UDP_PORT, e.Error()))
+	}
+	log.Println("Listening on UDP port", UDP_PORT)
+
+	bf := make([]byte, 1024, 1024)
+
+	for {
+		n, remote, e := conn.ReadFromUDP(bf)
+		if e != nil {
+			log.Println("Error reading from UDP: ", e)
+			continue
+		}
+		bs := bf[:n]
+		// handle bs
+		_, _ = bs, remote
+	}
+}
+
 func serveTCP() {
 
-	socket, e := net.Listen(`tcp`, ":"+TCP_PORT)
+	socket, e := net.ListenTCP(`tcp`, &net.TCPAddr{Port: TCP_PORT})
 	if e != nil {
 		exitOnError(fmt.Errorf("Error listening on TCP port %s: %s", TCP_PORT, e.Error()))
 	}
 	defer socket.Close()
-	log.Println("Serving TCP port", TCP_PORT)
+	log.Println("Listening on TCP port", TCP_PORT)
 
 	for {
 
@@ -197,6 +253,8 @@ type JoinResponse struct {
 
 func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 
+	log.Println(req.Host)
+
 	res := JoinResponse{}
 	dialString := req.Host + ":" + strconv.Itoa(req.Port)
 
@@ -231,6 +289,8 @@ func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 }
 
 func main() {
-	go serveUDP()
+	go gcPlayers()
+	go updatePlayerPositions()
+	go readPlayerKeys()
 	serveTCP()
 }

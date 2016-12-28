@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/satori/go.uuid"
@@ -43,7 +44,7 @@ var (
 type PlayerState struct {
 	Connection *net.UDPConn
 	Position   [3]float32
-	Direction  [3]float32
+	Rotation   [3]float32
 	LastPing   time.Time
 }
 
@@ -99,27 +100,42 @@ func gcPlayers() {
 	}
 }
 
+func writePlayerSegment(bf *bytes.Buffer, id uuid.UUID, state *PlayerState) {
+
+	posBytes := *((*[12]byte)(unsafe.Pointer(&state.Position[0])))
+	rotBytes := *((*[12]byte)(unsafe.Pointer(&state.Rotation[0])))
+
+	bf.Write(id.Bytes())
+	bf.Write(posBytes[:])
+	bf.Write(rotBytes[:])
+
+}
+
 func updatePlayerPositions() {
 
-	bf := make([]byte, 24, 24)
+	bf := bytes.NewBuffer(nil)
 
 	for {
+
 		time.Sleep(TIME_PERIOD)
 
 		Players.Lock.RLock()
-		for _, state := range Players.Store {
+		amountOfPlayers := byte(len(Players.Store))
 
-			// pos = (x,y,z)
-			posBytes := *((*[12]byte)(unsafe.Pointer(&state.Position[0])))
-			// dir = (x,y,z)
-			dirBytes := *((*[12]byte)(unsafe.Pointer(&state.Direction[0])))
+		for id, state := range Players.Store {
 
-			for i := 0; i < 12; i++ {
-				bf[i] = posBytes[i]
-				bf[i+12] = dirBytes[i]
+			bf.WriteByte(amountOfPlayers)
+			writePlayerSegment(bf, id, state)
+
+			for otherId, otherState := range Players.Store {
+				if otherId == id {
+					continue
+				}
+				writePlayerSegment(bf, otherId, otherState)
 			}
 
-			state.Connection.Write(bf[:])
+			state.Connection.Write(bf.Bytes())
+			bf.Truncate(0)
 
 		}
 
@@ -168,9 +184,7 @@ func readPlayerKeys() {
 			log.Println("Error decoding UUID from UDP:", e)
 			continue
 		}
-		if km == 0 {
-			continue
-		}
+
 		Players.Lock.Lock()
 		ps, ok := Players.Store[id]
 		if !ok {
@@ -180,36 +194,57 @@ func readPlayerKeys() {
 		}
 		ps.LastPing = time.Now()
 
-		// NOTE: ps.Direction[1] is our rotation angle in rads
-		angle := float64(ps.Direction[1])
-		const speedScale = 3
-
-		if km&KeyForward == KeyForward {
-			// ps.Direction[0] += 1 * DegreeInRadians
-			ps.Position[0] += speedScale * float32(math.Cos(angle))
-			ps.Position[1] += speedScale * float32(math.Sin(angle))
+		{ // always go forward
+			angle := float64(ps.Rotation[2])
+			ps.Position[0] += 3 * float32(math.Cos(angle))
+			ps.Position[1] += 3 * float32(math.Sin(angle))
 		}
 
 		if km&KeyBackward == KeyBackward {
-			// ps.Direction[0] -= 1 * DegreeInRadians
-			ps.Position[0] -= speedScale * float32(math.Cos(angle))
-			ps.Position[1] -= speedScale * float32(math.Sin(angle))
+			angle := float64(ps.Rotation[2])
+			ps.Position[0] -= 1.5 * float32(math.Cos(angle))
+			ps.Position[1] -= 1.5 * float32(math.Sin(angle))
 		}
 
 		if km&KeyLeft == KeyLeft {
-			ps.Direction[1] += 1 * DegreeInRadians
+			ps.Rotation[0] -= 1 * DegreeInRadians
+			ps.Rotation[2] += 1 * DegreeInRadians
 		}
 
 		if km&KeyRight == KeyRight {
-			ps.Direction[1] -= 1 * DegreeInRadians
+			ps.Rotation[0] += 1 * DegreeInRadians
+			ps.Rotation[2] -= 1 * DegreeInRadians
 		}
 
-		// if ps.Direction[0] > 360*DegreeInRadians { // rotated 360°
-		// 	ps.Direction[0] -= 360 * DegreeInRadians
-		// }
+		if ps.Rotation[0] > 360*DegreeInRadians { // rotated 360°
+			ps.Rotation[0] -= 360 * DegreeInRadians
+		}
 
-		if ps.Direction[1] > 360*DegreeInRadians { // rotated 360°
-			ps.Direction[1] -= 360 * DegreeInRadians
+		if ps.Rotation[0] > 360*DegreeInRadians { // rotated 360°
+			ps.Rotation[0] -= 360 * DegreeInRadians
+		}
+
+		if ps.Rotation[2] > 360*DegreeInRadians { // rotated 360°
+			ps.Rotation[2] -= 360 * DegreeInRadians
+		}
+
+		// X rotation limited to 45° (pi/2)
+		if ps.Rotation[0] > math.Pi/4 {
+			ps.Rotation[0] = math.Pi / 4
+		}
+
+		if ps.Rotation[0] < -math.Pi/4 {
+			ps.Rotation[0] = -math.Pi / 4
+		}
+
+		// stabilize X rotation when not in curve
+		if km&KeyLeft != KeyLeft && km&KeyRight != KeyRight {
+			if ps.Rotation[0] > 0 {
+				ps.Rotation[0] -= 3 * DegreeInRadians
+			}
+			if ps.Rotation[0] < 0 {
+				ps.Rotation[0] += 3 * DegreeInRadians
+			}
 		}
 
 		Players.Lock.Unlock()
@@ -319,7 +354,7 @@ func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 	Players.Store[id] = &PlayerState{
 		Connection: conn,
 		Position:   [3]float32{0, 0, 5},
-		Direction:  [3]float32{1, 0, 0},
+		Rotation:   [3]float32{0, 0, 0},
 	}
 	Players.Lock.Unlock()
 

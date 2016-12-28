@@ -103,7 +103,7 @@ func updatePlayerPositions() {
 		time.Sleep(TIME_PERIOD)
 
 		Players.Lock.RLock()
-		for id, state := range Players.Store {
+		for _, state := range Players.Store {
 
 			// pos = (x,y,z)
 			posBytes := *((*[12]byte)(unsafe.Pointer(&state.Position[0])))

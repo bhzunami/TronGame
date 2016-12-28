@@ -78,35 +78,33 @@ public final class SimpleSphereExample {
 
 				GeodesicSphere sphere = new GeodesicSphere(3);
 
-				IMesh transparentMeshT = new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(new RGBA(1, 1, 1, 0.5f)), DefaultGeometry.createV(sphere.getTriangles()), Queue.TRANSPARENCY);
-				IMesh transparentMeshL = new DefaultMesh(Primitive.LINES, new LineMaterial(new RGBA(1, 1, 1, 1)), DefaultGeometry.createV(sphere.getLines()), Queue.TRANSPARENCY);
-				IMesh transparentMeshP = new DefaultMesh(Primitive.POINTS, new PointMaterial(new RGBA(1, 1, 0, 0.5f), 8), DefaultGeometry.createV(sphere.getPoints()), Queue.TRANSPARENCY);
 
-				transparentMeshT.setPosition(Vec3.X_NEG);
-				transparentMeshL.setPosition(Vec3.X_NEG);
-				transparentMeshP.setPosition(Vec3.X_NEG);
+//				transparentMeshT.setPosition(Vec3.X_NEG);
+//				transparentMeshL.setPosition(Vec3.X_NEG);
+//				transparentMeshP.setPosition(Vec3.X_NEG);
 
-				transparentMeshT.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
-				transparentMeshL.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
-				transparentMeshP.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
+//				transparentMeshT.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
+//				transparentMeshL.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
+//				transparentMeshP.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
 
-				IMesh solidMeshT = new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(new RGBA(0.5f, 0.5f, 0.5f, 1)), DefaultGeometry.createV(sphere.getTriangles()), Queue.DEPTH);
-				IMesh solidMeshL = new DefaultMesh(Primitive.LINES, new LineMaterial(new RGBA(1, 1, 1, 1)), DefaultGeometry.createV(sphere.getLines()), Queue.DEPTH);
-				IMesh solidMeshP = new DefaultMesh(Primitive.POINTS, new PointMaterial(new RGBA(1, 1, 0, 1), 8), DefaultGeometry.createV(sphere.getPoints()), Queue.DEPTH);
+//				IMesh solidMeshT = new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(new RGBA(0.5f, 0.5f, 0.5f, 1)), DefaultGeometry.createV(sphere.getTriangles()), Queue.DEPTH);
+//				IMesh solidMeshL = new DefaultMesh(Primitive.LINES, new LineMaterial(new RGBA(1, 1, 1, 1)), DefaultGeometry.createV(sphere.getLines()), Queue.DEPTH);
+//				IMesh solidMeshP = new DefaultMesh(Primitive.POINTS, new PointMaterial(new RGBA(1, 1, 0, 1), 8), DefaultGeometry.createV(sphere.getPoints()), Queue.DEPTH);
 
-				solidMeshT.setPosition(Vec3.X);
-				solidMeshL.setPosition(Vec3.X);
-				solidMeshP.setPosition(Vec3.X);
+//				solidMeshT.setPosition(Vec3.X);
+//				solidMeshL.setPosition(Vec3.X);
+//				solidMeshP.setPosition(Vec3.X);
 
-				solidMeshT.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
-				solidMeshL.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
-				solidMeshP.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
+//				solidMeshT.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
+//				solidMeshL.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
+//				solidMeshP.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
 
 				IGPUImage t = IGPUImage.read(SimpleLightExample.class.getResource("/textures/earth_nasa.jpg"));
 				IMesh texturedMeshT = new DefaultMesh(Primitive.TRIANGLES, new ColorMapMaterial(t), DefaultGeometry.createVM(sphere.getTriangles(), sphere.getTexCoords()), Queue.DEPTH);
 				texturedMeshT.setPosition(Vec3.ZERO);
 
-				scene.add3DObjects(transparentMeshT, transparentMeshL, transparentMeshP, solidMeshT, solidMeshL, solidMeshP, texturedMeshT);
+//                scene.add3DObjects(transparentMeshT, transparentMeshL, transparentMeshP, solidMeshT, solidMeshL, solidMeshP, texturedMeshT);
+                scene.add3DObjects(texturedMeshT);
 			} catch(Throwable t) {
 				LOG.severe(t);
 			}

@@ -105,7 +105,7 @@ public class TronGame {
         HashMap<String, Object> playerMap = new HashMap<>();
         playerMap.put("name", player.getName());
         playerMap.put("port", socket.getLocalPort());
-        playerMap.put("host", InetAddress.getLocalHost()  );
+        //playerMap.put("host", InetAddress.getLocalHost()  );
         
         HashMap<String, Object> joinRequest = new HashMap<>();
         joinRequest.put("action", "join");

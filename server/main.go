@@ -3,15 +3,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/satori/go.uuid"
 	"log"
+	"math"
 	"net"
 	"os"
 	"strconv"
 	"sync"
 	"time"
 	"unsafe"
+)
 
-	"github.com/satori/go.uuid"
+const (
+	DegreeInRadians = (2 * math.Pi) / 360 // 0.0174532925199432954743716805978692718781530857086181640625
 )
 
 const (
@@ -171,21 +175,43 @@ func readPlayerKeys() {
 		ps, ok := Players.Store[id]
 		if !ok {
 			log.Println("No player with UUID:", id)
+			Players.Lock.Unlock()
 			continue
 		}
 		ps.LastPing = time.Now()
+
+		// NOTE: ps.Direction[1] is our rotation angle in rads
+		angle := float64(ps.Direction[1])
+		const speedScale = 3
+
 		if km&KeyForward == KeyForward {
-			ps.Position[0] += 4
+			// ps.Direction[0] += 1 * DegreeInRadians
+			ps.Position[0] += speedScale * float32(math.Cos(angle))
+			ps.Position[1] += speedScale * float32(math.Sin(angle))
 		}
+
 		if km&KeyBackward == KeyBackward {
-			ps.Position[0] -= 4
+			// ps.Direction[0] -= 1 * DegreeInRadians
+			ps.Position[0] -= speedScale * float32(math.Cos(angle))
+			ps.Position[1] -= speedScale * float32(math.Sin(angle))
 		}
-		if km&KeyRight == KeyRight {
-			ps.Position[1] += 1
-		}
+
 		if km&KeyLeft == KeyLeft {
-			ps.Position[1] -= 1
+			ps.Direction[1] += 1 * DegreeInRadians
 		}
+
+		if km&KeyRight == KeyRight {
+			ps.Direction[1] -= 1 * DegreeInRadians
+		}
+
+		// if ps.Direction[0] > 360*DegreeInRadians { // rotated 360°
+		// 	ps.Direction[0] -= 360 * DegreeInRadians
+		// }
+
+		if ps.Direction[1] > 360*DegreeInRadians { // rotated 360°
+			ps.Direction[1] -= 360 * DegreeInRadians
+		}
+
 		Players.Lock.Unlock()
 	}
 }

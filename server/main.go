@@ -20,7 +20,7 @@ const (
 	TCP_BUF_CAP    = 1024
 	UDP_BUF_CAP    = 1024
 	TIME_PERIOD    = 17 * time.Millisecond // ~60fps
-	PLAYER_TIMEOUT = 10 * time.Second
+	PLAYER_TIMEOUT = 100 * time.Second
 )
 
 var (
@@ -105,7 +105,9 @@ func updatePlayerPositions() {
 		Players.Lock.RLock()
 		for id, state := range Players.Store {
 
+			// pos = (x,y,z)
 			posBytes := *((*[12]byte)(unsafe.Pointer(&state.Position[0])))
+			// dir = (x,y,z)
 			dirBytes := *((*[12]byte)(unsafe.Pointer(&state.Direction[0])))
 
 			for i := 0; i < 12; i++ {
@@ -114,22 +116,9 @@ func updatePlayerPositions() {
 			}
 
 			state.Connection.Write(bf[:])
-			fmt.Println("sending player position", id.String(), state.Position)
-
-			if state.Direction[0] > 0 {
-				state.Direction[0] -= 0.01
-			}
-			if state.Direction[1] > 0 {
-				state.Direction[1] -= 0.01
-			}
-			if state.Direction[0] < 0 {
-				state.Direction[0] += 0.01
-			}
-			if state.Direction[1] < 0 {
-				state.Direction[1] += 0.01
-			}
 
 		}
+
 		Players.Lock.RUnlock()
 	}
 }
@@ -186,32 +175,16 @@ func readPlayerKeys() {
 		}
 		ps.LastPing = time.Now()
 		if km&KeyForward == KeyForward {
-			ps.Position[0] += 1
+			ps.Position[0] += 4
 		}
 		if km&KeyBackward == KeyBackward {
-			ps.Position[0] -= 1
+			ps.Position[0] -= 4
 		}
 		if km&KeyRight == KeyRight {
 			ps.Position[1] += 1
-			if ps.Direction[0] < 1 {
-				ps.Direction[0] += 0.1
-			}
-			if ps.Direction[1] < 1 {
-				ps.Direction[1] += 0.1
-			}
-		} else {
-
 		}
 		if km&KeyLeft == KeyLeft {
 			ps.Position[1] -= 1
-			if ps.Direction[0] > -1 {
-				ps.Direction[0] -= 0.1
-			}
-			if ps.Direction[1] > -1 {
-				ps.Direction[1] -= 0.1
-			}
-		} else {
-
 		}
 		Players.Lock.Unlock()
 	}
@@ -319,7 +292,7 @@ func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 	Players.Lock.Lock()
 	Players.Store[id] = &PlayerState{
 		Connection: conn,
-		Position:   [3]float32{0, 0, 0},
+		Position:   [3]float32{0, 0, 5},
 		Direction:  [3]float32{1, 0, 0},
 	}
 	Players.Lock.Unlock()

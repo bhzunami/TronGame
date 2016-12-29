@@ -11,12 +11,13 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.SynchronousQueue;
+import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -24,7 +25,6 @@ import ch.fhnw.ether.controller.IController;
 import ch.fhnw.ether.controller.event.IEventScheduler;
 import ch.fhnw.ether.formats.IModelReader.Options;
 import ch.fhnw.ether.formats.obj.ObjReader;
-import ch.fhnw.ether.image.IGPUImage;
 import ch.fhnw.ether.scene.IScene;
 import ch.fhnw.ether.scene.camera.Camera;
 import ch.fhnw.ether.scene.camera.ICamera;
@@ -36,10 +36,7 @@ import ch.fhnw.ether.scene.mesh.IMesh.Flag;
 import ch.fhnw.ether.scene.mesh.IMesh.Primitive;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
 import ch.fhnw.ether.scene.mesh.geometry.DefaultGeometry;
-import ch.fhnw.ether.scene.mesh.geometry.IGeometry;
-import ch.fhnw.ether.scene.mesh.material.ColorMapMaterial;
 import ch.fhnw.ether.scene.mesh.material.ColorMaterial;
-import ch.fhnw.ether.scene.mesh.material.IMaterial;
 import ch.fhnw.ether.view.IView;
 import ch.fhnw.main.events.UserInput;
 import ch.fhnw.util.color.RGB;
@@ -53,6 +50,7 @@ public class GameWorld {
 
     // The player which plays on this view
     private Player mplayer;
+//    private HashMap<String, Player> players = new HashMap<>();
     private List<Player> players = new ArrayList<>();
     private ICamera cam;
     private List<IMesh> ramps = new ArrayList<>();
@@ -68,7 +66,7 @@ public class GameWorld {
     
     private Vec3 direction = new Vec3(1, 0, 0);
 
-    
+    private final int offset = 40;
 
     DatagramSocket udpSocket;
     private float angle = 0;
@@ -82,7 +80,8 @@ public class GameWorld {
     public static final int IDLE = 0;
     public static final int USER_INPUT = 1;
     public static final int READY = 2;
-   
+    public double old_time;
+
     private static ObjectMapper mapper = new ObjectMapper();
 
 
@@ -101,6 +100,7 @@ public class GameWorld {
         this.udpSocket =  socket;
         this.udpSocket.setReceiveBufferSize(1);
         this.server = InetAddress.getByName(server);
+
     }
 
 
@@ -112,15 +112,18 @@ public class GameWorld {
     public void createWorld(IScene scene, IView view) throws IOException {
         System.out.println("Create Game world");
 
+        
+        this.controller.getScene().add3DObject(mplayer.getMesh());
+
         // Add player
-        for(Player p : this.players) {
-            final URL obj = getClass().getResource("/models/cube.obj");
-            final List<IMesh> meshes = new ArrayList<>();
-            new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().forEach(mesh -> meshes.add(mesh));
-            final List<IMesh> merged = MeshUtilities.mergeMeshes(meshes);
-//            p.setMesh(new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().get(0));
-            this.controller.getScene().add3DObject(p.getMesh());
-        }
+//        for(Player p : this.players) {
+//            final URL obj = getClass().getResource("/models/cube.obj");
+//            final List<IMesh> meshes = new ArrayList<>();
+//            new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().forEach(mesh -> meshes.add(mesh));
+//            final List<IMesh> merged = MeshUtilities.mergeMeshes(meshes);
+////            p.setMesh(new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().get(0));
+//            this.controller.getScene().add3DObject(p.getMesh());
+//        }
 
         cam = new Camera();
         controller.getScene().add3DObject(cam);
@@ -176,13 +179,22 @@ public class GameWorld {
                     ex.printStackTrace();
                 }
                 // Update game world
+//                if((time - old_time) % 1000 < 5 ) {
+//                    System.out.println("Draw line");
+//                    
+//                    System.out.println("line drawed");
+//                }
+//                old_time = time;
                 controller.viewChanged(controller.getCurrentView());
+
             }
         });
     }
 
     public void addPlayer(Player p) {
+//        this.players.put(p.getId(), p);
         this.players.add(p);
+        this.mplayer = p;
     }
 
     
@@ -225,75 +237,62 @@ public class GameWorld {
     }
 
     
-//    private void updateCamera(Vec3 playerPosition, Vec3 direction) {
-//        Vec3 camara_position = new Vec3(playerPosition.x, playerPosition.y -6, playerPosition.z +2);
-//        cam.setPosition(camara_position);
-//        cam.setTarget(playerPosition);
-//        
-//    }
+    private void updateCamera(Vec3 playerPosition, Vec3 direction) {
+        Vec3 camara_position = new Vec3(playerPosition.x, playerPosition.y -6, playerPosition.z +2);
+        cam.setPosition(camara_position);
+        cam.setTarget(playerPosition);
+        
+    }
     private void getUDPData() throws IOException {
         this.udpSocket.receive(this.packet);
         this.packet.getData();
         byte[] data = this.packet.getData();
-        
-        Vec3 player_pos = new Vec3(ByteBuffer.wrap(data, 0,4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
-                ByteBuffer.wrap(data, 4,4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
-                ByteBuffer.wrap(data, 8,4).order(ByteOrder.LITTLE_ENDIAN).getFloat());
-      
-        Vec3 new_direction = new Vec3(ByteBuffer.wrap(data,12,4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
-                ByteBuffer.wrap(data,16,4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
-                ByteBuffer.wrap(data,20,4).order(ByteOrder.LITTLE_ENDIAN).getFloat());
-               
-        if(player_pos.x > 1000 || player_pos.y > 1000) {
-            return;
-        }
-        players.get(0).setPosition(player_pos);
-        
-//        float angle = this.direction.angle(new_direction);
-//        float acos_arg = MathUtilities.dot(this.direction.x, 
-//                                           this.direction.y,
-//                                           this.direction.z, 
-//                                           new_direction.x, 
-//                                           new_direction.y, 
-//                                           new_direction.z) / MathUtilities.length(new_direction.x, 
-//                                                                                   new_direction.y, 
-//                                                                                   new_direction.z) / MathUtilities.length(this.direction.x, 
-//                                                                                                                           this.direction.y, 
-//                                                                                                                           this.direction.z);
-//        if(acos_arg > 1) {
-//            acos_arg = 1;
-//        } else if(acos_arg < -1) {
-//            acos_arg = -1;
-//        }
-//        float angle = MathUtilities.RADIANS_TO_DEGREES * (float)Math.acos(acos_arg);
-//        
-//        if(new_direction.y - this.direction.y < 0) {
-//            angle *= -1;
-//        }
-//        
-        
-        this.abs_rot_angle +=   MathUtilities.RADIANS_TO_DEGREES *(new_direction.y - this.direction.y);
-        
-        System.out.println("ABS " +this.abs_rot_angle);
-        System.out.println("PLayer POS" +players.get(0).getPosition());
-        
-        Mat4 rot = Mat4.rotate(this.abs_rot_angle, Vec3.Z);
-        players.get(0).getMesh().setTransform(Mat4.multiply(rot, Mat4.rotate(this.angle, Vec3.X)));
-        
                 
-        Vec3 playerPos = players.get(0).getPosition();
+        // 1 byte = num playes
+        // 16 Bytes = uuid
+        // 12 Bytes position
+        // 12 Bytes rotation
+        byte num_players = ByteBuffer.wrap(data, 0, 1).order(ByteOrder.LITTLE_ENDIAN).get();
         
-        Vec3 cam_pos = playerPos.subtract(rot.transform(new Vec3(5, 0, -1)));
+        System.out.println("NUM Players: " +num_players);
+        
+        byte[] uuid = Arrays.copyOfRange(data, 1, 17);
+        ByteBuffer byteBuffer = ByteBuffer.wrap(uuid);
+        Long high = byteBuffer.getLong();
+        Long low = byteBuffer.getLong();
+        
+        Vec3 player_pos = new Vec3(ByteBuffer.wrap(data, 17,4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
+                ByteBuffer.wrap(data, 21,4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
+                ByteBuffer.wrap(data, 25,4).order(ByteOrder.LITTLE_ENDIAN).getFloat());
+        
+        players.get(0).updatePosition(player_pos);
+        
+        
+        Vec3 rotation = new Vec3(ByteBuffer.wrap(data,29,4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
+                ByteBuffer.wrap(data,33,4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
+                ByteBuffer.wrap(data,37,4).order(ByteOrder.LITTLE_ENDIAN).getFloat());
+        
+    
+        this.abs_rot_angle +=   MathUtilities.RADIANS_TO_DEGREES * (rotation.z - this.direction.z);
+        
+        Mat4 rot_z = Mat4.rotate(this.abs_rot_angle, Vec3.Z);
+        Mat4 rot_x = Mat4.rotate(MathUtilities.RADIANS_TO_DEGREES *rotation.x, Vec3.X);
+        players.get(0).getMesh().setTransform(Mat4.multiply(rot_z,rot_x));
+         
+        Vec3 playerPos = players.get(0).getPosition();
+        Vec3 cam_pos = playerPos.subtract(rot_z.transform(new Vec3(5, 0, -1)));
              
         cam.setPosition(cam_pos);
         cam.setTarget(player_pos);
         
-
-        this.direction = new_direction;
-       
+//        Line line = new Line(MathUtilities.RADIANS_TO_DEGREES *rotation.x);
+//        Vec3 line_pos = playerPos.subtract(rot_z.transform(new Vec3(2, 0, 0)));
+//        line.getMesh().setPosition(line_pos);
+//        controller.getScene().add3DObject(line.getMesh());
+        this.direction = rotation;
 
     }
-
+    
 
 
 }

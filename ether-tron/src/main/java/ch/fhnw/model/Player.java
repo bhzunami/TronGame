@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
+import ch.fhnw.util.math.Mat4;
 import ch.fhnw.util.math.Vec3;
 
 public class Player implements Serializable {
@@ -17,6 +18,8 @@ public class Player implements Serializable {
     private IMesh mesh;
     private String name;
     private String id;
+    private float abs_rot_angle = 0f;
+    private Vec3 direction;
     
     
     public Player() {}
@@ -24,6 +27,7 @@ public class Player implements Serializable {
     public Player(String name) throws IOException {
         this.name = name;
         this.mesh = MeshUtilities.createCube();
+        this.direction = new Vec3(1, 0, 0);
 
     }
     
@@ -65,6 +69,33 @@ public class Player implements Serializable {
     public String toString() {
         return id;
     }
+    
+    public float getRotAngle() {
+        return this.abs_rot_angle;
+    }
+    
+    public void setRotAngle(float angle) {
+        this.abs_rot_angle += angle;
+    }
+    
+    public Vec3 getDirection() {
+        return this.direction;
+    }
 
+    public void setDirection(Vec3 direction) {
+        this.direction = direction;
+    }
+    
+    public void updatePosition(Vec3 position) {
+        if(position.x > 1000 || position.y > 1000) {
+            return;
+        }
+        this.setPosition(position);
+    }
+    
+    
+    public void rotate(Mat4 transformation) {
+        this.mesh.setTransform(transformation);
+    }
 
 }

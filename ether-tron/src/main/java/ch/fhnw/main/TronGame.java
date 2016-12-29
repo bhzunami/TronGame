@@ -70,7 +70,18 @@ public class TronGame {
             controller.setTool(evenntHandler);
             
             // Set game world objects
-            gameWorld.addPlayer(player);
+            try {
+                // Update ID
+                player.setId(sendPlayer(player, socket, serverAddress));
+//                gameWorld.addPlayer(player, true);
+                gameWorld.addPlayer(player);
+            } catch(JsonProcessingException ex) {
+                System.out.println("Could not read ansewr from server");
+            } catch(IOException ex) {
+                System.out.println("Could not connect to server");
+            }
+            
+            
             try {
                 gameWorld.createWorld(scene, view);
             } catch (IOException e) {
@@ -81,14 +92,6 @@ public class TronGame {
 
         });
         
-        try {
-            // Update ID
-            player.setId(sendPlayer(player, socket, serverAddress));
-        } catch(JsonProcessingException ex) {
-            System.out.println("Could not read ansewr from server");
-        } catch(IOException ex) {
-            System.out.println("Could not connect to server");
-        }
         
         // Start main game loop
         Platform.get().run();

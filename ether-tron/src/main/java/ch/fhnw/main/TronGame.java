@@ -74,7 +74,7 @@ public class TronGame {
                 // Update ID
                 player.setId(sendPlayer(player, socket, serverAddress));
 //                gameWorld.addPlayer(player, true);
-                gameWorld.addPlayer(player);
+                gameWorld.addPlayer(player, true);
             } catch(JsonProcessingException ex) {
                 System.out.println("Could not read ansewr from server");
             } catch(IOException ex) {

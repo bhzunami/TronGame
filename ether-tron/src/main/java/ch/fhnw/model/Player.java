@@ -36,6 +36,10 @@ public class Player implements Serializable {
         return this.mesh.getPosition();
     }
     
+    public Vec3 getPositionCopy() {
+        return new Vec3(this.mesh.getPosition().x, this.mesh.getPosition().y, this.mesh.getPosition().z);
+    }
+    
     public void setPosition(Vec3 pos) {
         this.mesh.setPosition(pos);
     }

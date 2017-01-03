@@ -4,7 +4,7 @@ import java.util.Set;
 
 public enum UserInput {
     
-    MOVE_FORWARD(265, 1), MOVE_BACKWARD(264, 2), MOVE_LEFT(263, 4), MOVE_RIGHT(262, 8);
+    MOVE_FORWARD(265, 1), MOVE_BACKWARD(264, 2), MOVE_LEFT(263, 4), MOVE_RIGHT(262, 8), SPACE(32, 16);
     
     private int key;
     private byte pos;

@@ -117,16 +117,16 @@ public final class SimpleTextureExample {
                 float f = 0.4f + 0.6f * (float) (Math.sin(Math.toRadians(c)) * 0.5 + 1);
 
                 // apply changes to geometry
-                 mesh.setTransform(Mat4.scale(f, f, f));
-                mesh.getGeometry().modify(1, (id, vertices) -> {
-                    for (int i = 0; i < vertices.length; ++i) {
-                        if (i % 4 == 3)
-                            continue;
-                         vertices[i] -= 0.2f * (1 - f);
-                         if (vertices[i + 0] <= 0)
-                         vertices[i + 0] = 1;
-                    }
-                });
+//                 mesh.setTransform(Mat4.scale(f, f, f));
+//                mesh.getGeometry().modify(1, (id, vertices) -> {
+//                    for (int i = 0; i < vertices.length; ++i) {
+//                        if (i % 4 == 3)
+//                            continue;
+//                         vertices[i] -= 0.2f * (1 - f);
+//                         if (vertices[i + 0] <= 0)
+//                         vertices[i + 0] = 1;
+//                    }
+//                });
             }
         });
 

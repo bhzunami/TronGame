@@ -20,6 +20,7 @@ public class EventHandler extends AbstractTool {
     public static final int MOVE_BACKWARD = 264;
     public static final int MOVE_LEFT = 263;
     public static final int MOVE_RIGHT = 262;
+    public static final int SPACE = 32;
 
     IController controller;
     GameWorld gw;

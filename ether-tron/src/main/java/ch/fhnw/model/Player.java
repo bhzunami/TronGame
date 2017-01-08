@@ -121,5 +121,6 @@ public class Player implements Serializable {
     public Trace getTrace() {
         return this.trace;
     }
+    
 
 }

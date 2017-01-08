@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -14,9 +12,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+
+import org.tritonus.share.ArraySet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -61,7 +60,6 @@ public class GameWorld {
     private IMesh lightMesh;
     private IMesh ground = MeshUtilities.createGroundPlane(1000);
 
-
     private final int offset = 40;
 
     DatagramSocket udpSocket;
@@ -88,7 +86,7 @@ public class GameWorld {
     private Set<UserInput> userInputs = new HashSet<UserInput>();
 
     public GameWorld(IController controller, Player p, DatagramSocket socket, String server)
-            throws UnknownHostException, SocketException {
+            throws IOException {
         this.controller = controller;
         this.mplayer = p;
         this.udpSocket = socket;
@@ -146,6 +144,7 @@ public class GameWorld {
             }
         });
     }
+    
 
     public void addPlayer(Player p, boolean main) {
         this.players.put(p.getId(), p);
@@ -199,6 +198,12 @@ public class GameWorld {
         cam.setTarget(direction);
 
     }
+    
+    private void removePlayer(Player p) {
+        for(Point point : p.getTrace().getPoints()) {
+            this.controller.getScene().remove3DObject(point.getMesh());
+        }
+    }
 
     private void getUDPData(double time) throws IOException {
         this.udpSocket.receive(this.packet);
@@ -210,6 +215,7 @@ public class GameWorld {
         // 12 Bytes position
         // 12 Bytes rotation
         byte num_players = ByteBuffer.wrap(data, 0, 1).order(ByteOrder.LITTLE_ENDIAN).get();
+        Set<String> activePlayers = new ArraySet<>();
 
         for (int i = 0; i < num_players; i++) {
             int index = offset * i;
@@ -228,6 +234,7 @@ public class GameWorld {
 
             String puuid = new UUID(high, low).toString();
             Player p = players.get(puuid);
+
             if (p == null) {
                 System.out.println("NEW PLAYER");
                 // new player in game
@@ -236,6 +243,8 @@ public class GameWorld {
                 this.addPlayer(p, false);
                 this.controller.getScene().add3DObjects(p.getMesh());
             }
+            
+            activePlayers.add(p.getId());
 
             // Calculate rotation of player
             p.setRotAngle(MathUtilities.RADIANS_TO_DEGREES * (rotation.z - p.getDirection().z));
@@ -260,6 +269,16 @@ public class GameWorld {
 
             p.setDirection(rotation);
 
+        }
+        
+        // Check if player is deleted
+        
+        if(this.players.size() > activePlayers.size()) {
+            // Remove a player
+            for(String id : this.players.keySet()) {
+                if(!activePlayers.contains(id))
+                    this.removePlayer(this.players.get(id));
+            }
         }
 
     }

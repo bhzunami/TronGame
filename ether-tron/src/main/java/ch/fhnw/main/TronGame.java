@@ -41,23 +41,21 @@ public class TronGame {
         }
         
         Player p = new Player(args[0]);
-        
         String serverAddress = args[1];
-        DatagramSocket udpSocket = new DatagramSocket();
-        udpSocket.setSoTimeout(5);
-
-
+        
         p.setPosition(new Vec3(0,0,0));
-        new TronGame(p, udpSocket, serverAddress);
+        new TronGame(p, serverAddress);
 
     }
 
-    public TronGame(Player player, DatagramSocket socket, String serverAddress) throws UnknownHostException, SocketException {
+    public TronGame(Player player, String serverAddress) throws IOException {
         Platform.get().init();
-
+        
+        DatagramSocket udpSocket = new DatagramSocket();
+        udpSocket.setSoTimeout(5);
         // Create controller
         IController controller = new DefaultController();
-        GameWorld gameWorld = new GameWorld(controller, player, socket, serverAddress);
+        GameWorld gameWorld = new GameWorld(controller, player, udpSocket, serverAddress);
 
         ITool evenntHandler = new EventHandler(controller, new NavigationTool(controller), gameWorld);
 
@@ -72,7 +70,7 @@ public class TronGame {
             
             // Set game world objects
             try {
-                JoinResponseDao gameData = sendPlayer(player, socket, serverAddress).getResponse();
+                JoinResponseDao gameData = sendPlayer(player, udpSocket, serverAddress).getResponse();
                 // Update ID
                 player.setId(gameData.getId());
                 gameWorld.addPlayer(player, true);
@@ -101,17 +99,14 @@ public class TronGame {
     }
     
     @SuppressWarnings("unchecked")
-    private GeneralResponse<JoinResponseDao> sendPlayer(Player player, DatagramSocket socket, String serverAddress) throws JsonProcessingException, IOException {
-        // TCP Socket connection
-        Socket clientSocket = new Socket(serverAddress, 7606);
-        OutputStream out = clientSocket.getOutputStream();
-        InputStream in = clientSocket.getInputStream();
-        
+    private GeneralResponse<JoinResponseDao> sendPlayer(Player player, DatagramSocket udpSocket, String serverAddress) throws JsonProcessingException, IOException {
+        Socket tcpSocket = new Socket(serverAddress, 7606);
+        OutputStream out = tcpSocket.getOutputStream();
+        InputStream in = tcpSocket.getInputStream();
         // Prepare data to send
         HashMap<String, Object> playerMap = new HashMap<>();
         playerMap.put("name", player.getName());
-        playerMap.put("port", socket.getLocalPort());
-        //playerMap.put("host", InetAddress.getLocalHost()  );
+        playerMap.put("port", udpSocket.getLocalPort());
         
         HashMap<String, Object> joinRequest = new HashMap<>();
         joinRequest.put("action", "join");
@@ -120,8 +115,7 @@ public class TronGame {
         // Write player data to Server as TCP
         out.write(mapper.writeValueAsString(joinRequest).getBytes());
         out.flush();
-        
-        // Get player id        
+        // Get player id
         GeneralResponse<JoinResponseDao> response = new GeneralResponse<>();
         response = mapper.readValue(in, new TypeReference<GeneralResponse<JoinResponseDao>>() {});
         
@@ -130,7 +124,7 @@ public class TronGame {
             throw new RuntimeException("Response Error");
         }
 
-        clientSocket.close();
+        tcpSocket.close();
         return response;
     }
 

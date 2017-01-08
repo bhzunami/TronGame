@@ -51,6 +51,9 @@ public class GameWorld {
     private ICamera cam;
     private List<Block> blocks = new ArrayList<>();
     private List<PowerUp> powerUps = new ArrayList<>();
+    private Point[] trace = new Point[600];
+    
+    private int traceIterator = 0;
     private IController controller;
     private static final RGB AMBIENT = RGB.BLACK;
     private static final RGB COLOR = RGB.YELLOW;
@@ -146,6 +149,11 @@ public class GameWorld {
 
     public void addPlayer(Player p, boolean main) {
         this.players.put(p.getId(), p);
+        
+        for(Point point : p.getTrace().getPoints()) {
+            this.controller.getScene().add3DObject(point.getMesh());
+        }
+        
 
         if (main) {
             this.mplayer = p;
@@ -237,14 +245,13 @@ public class GameWorld {
             p.updatePosition((player_pos));
             p.rotate(Mat4.multiply(rot_z, rot_x));
             
-            
-            if(time - this.time > 0.2f ) {
-                drawLine(p.getPositionCopy(), rotation.x, Mat4.rotate(p.getRotAngle(), Vec3.Z));
-                this.time = time;
+            p.getTrace().notify(p.getPositionCopy());
+//            this.trace[this.traceIterator].setPosition(p.getPositionCopy());
+//            this.traceIterator++;
+//            if(this.traceIterator >= this.trace.length) {
+//                this.traceIterator = 0;
+//            }
 
-            }
-
-            
             
             if (p == mplayer) {
                 Vec3 ppos = mplayer.getPosition();
@@ -258,12 +265,6 @@ public class GameWorld {
     }
     
     
-    private void drawLine(Vec3 position, float angle, Mat4 rot_z) {
-        Line line = new Line(MathUtilities.RADIANS_TO_DEGREES * angle);
-        Vec3 line_pos = position.subtract(rot_z.transform(new Vec3(2, 0, 0)));
-        line.getMesh().setPosition(line_pos);
-        controller.getScene().add3DObject(line.getMesh());
-    }
 
     public void addBlocks(float[][] blocks) throws IOException {
         for(int i = 0; i < blocks.length; i++) {

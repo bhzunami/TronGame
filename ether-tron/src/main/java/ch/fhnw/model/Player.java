@@ -1,6 +1,5 @@
 package ch.fhnw.model;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
@@ -13,12 +12,14 @@ import ch.fhnw.ether.formats.IModelReader.Options;
 import ch.fhnw.ether.formats.obj.ObjReader;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
+import ch.fhnw.helper.Trace;
 import ch.fhnw.util.math.Mat4;
 import ch.fhnw.util.math.Vec3;
 
 public class Player implements Serializable {
 
     private static final long serialVersionUID = 3003306163179867285L;
+    private static final int NUMPOINTS = 600;
 
     @JsonIgnore
     private List<IMesh> mesh;
@@ -26,6 +27,7 @@ public class Player implements Serializable {
     private String id;
     private float abs_rot_angle = 0f;
     private Vec3 direction;
+    private Trace trace;
     
     
     public Player() {}
@@ -34,6 +36,7 @@ public class Player implements Serializable {
         this.name = name;
         this.mesh = Player.getPlayerMesh("blender.obj");
         this.direction = new Vec3(1, 0, 0);
+        this.trace = new Trace(NUMPOINTS);
 
 
     }
@@ -57,7 +60,9 @@ public class Player implements Serializable {
     }
     
     public void setPosition(Vec3 pos) {
-        this.mesh.get(0).setPosition(pos);
+        for(IMesh mesh : this.mesh) {
+            mesh.setPosition(pos);
+        }
     }
     
     public String getId() {
@@ -111,6 +116,10 @@ public class Player implements Serializable {
     	for(IMesh mesh : this.mesh) {
     		mesh.setTransform(transformation);	
     	}
+    }
+    
+    public Trace getTrace() {
+        return this.trace;
     }
 
 }

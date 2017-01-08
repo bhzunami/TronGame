@@ -31,10 +31,11 @@ public class Block  implements Serializable {
     private String id;
     
     
-    public Block() throws IOException {
+    public Block(float x, float y) throws IOException {
         this.id = UUID.randomUUID().toString();
         final URL obj = getClass().getResource("/models/block.obj");
         mesh = new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().get(0);
+        this.setPosition(new Vec3(x, y, 0));
         
 //        GeodesicSphere sphere = new GeodesicSphere(15);
 //        IGPUImage t = IGPUImage.read(GameWorld.class.getResource("/textures/tron.jpg"));

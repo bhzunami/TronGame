@@ -4,14 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.fhnw.ether.controller.DefaultController;
@@ -23,6 +22,8 @@ import ch.fhnw.ether.scene.DefaultScene;
 import ch.fhnw.ether.scene.IScene;
 import ch.fhnw.ether.view.DefaultView;
 import ch.fhnw.ether.view.IView;
+import ch.fhnw.helper.GeneralResponse;
+import ch.fhnw.helper.JoinResponseDao;
 import ch.fhnw.main.events.EventHandler;
 import ch.fhnw.model.GameWorld;
 import ch.fhnw.model.Player;
@@ -71,14 +72,16 @@ public class TronGame {
             
             // Set game world objects
             try {
+                JoinResponseDao gameData = sendPlayer(player, socket, serverAddress).getResponse();
                 // Update ID
-                player.setId(sendPlayer(player, socket, serverAddress));
-//                gameWorld.addPlayer(player, true);
+                player.setId(gameData.getId());
                 gameWorld.addPlayer(player, true);
+                gameWorld.addBlocks(gameData.getBlocks());
+                gameWorld.addPowerUps(gameData.getPowerUps());
             } catch(JsonProcessingException ex) {
                 System.out.println("Could not read ansewr from server");
             } catch(IOException ex) {
-                System.out.println("Could not connect to server");
+                System.out.println("Could not connect to server: " +ex.getMessage());
             }
             
             
@@ -98,7 +101,7 @@ public class TronGame {
     }
     
     @SuppressWarnings("unchecked")
-    private String sendPlayer(Player player, DatagramSocket socket, String serverAddress) throws JsonProcessingException, IOException {
+    private GeneralResponse<JoinResponseDao> sendPlayer(Player player, DatagramSocket socket, String serverAddress) throws JsonProcessingException, IOException {
         // TCP Socket connection
         Socket clientSocket = new Socket(serverAddress, 7606);
         OutputStream out = clientSocket.getOutputStream();
@@ -118,19 +121,17 @@ public class TronGame {
         out.write(mapper.writeValueAsString(joinRequest).getBytes());
         out.flush();
         
-        // Get player id
-        HashMap<String, Object> response = new HashMap<>();
-        response = mapper.readValue(in, response.getClass());
+        // Get player id        
+        GeneralResponse<JoinResponseDao> response = new GeneralResponse<>();
+        response = mapper.readValue(in, new TypeReference<GeneralResponse<JoinResponseDao>>() {});
         
         // Check if error
-        if(response.get("error") != null) {
-            System.out.println("Error");
+        if(response.isError()) {
+            throw new RuntimeException("Response Error");
         }
-        
-        String id = ((HashMap<String, String>)response.get("response")).get("id");
-        System.out.println("Player: " +id);
+
         clientSocket.close();
-        return id;
+        return response;
     }
 
 }

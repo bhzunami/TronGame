@@ -48,11 +48,9 @@ public class GameWorld {
     // The player which plays on this view
     private Player mplayer;
     private HashMap<String, Player> players = new HashMap<>();
-    // private List<Player> players = new ArrayList<>();
     private ICamera cam;
-    private List<IMesh> ramps = new ArrayList<>();
     private List<Block> blocks = new ArrayList<>();
-    private List<IMesh> powerUps = new ArrayList<>();
+    private List<PowerUp> powerUps = new ArrayList<>();
     private IController controller;
     private static final RGB AMBIENT = RGB.BLACK;
     private static final RGB COLOR = RGB.YELLOW;
@@ -104,19 +102,6 @@ public class GameWorld {
     public void createWorld(IScene scene, IView view) throws IOException {
         System.out.println("Create Game world");
 
-       
-
-        // Add player
-        // for(Player p : this.players) {
-        // final URL obj = getClass().getResource("/models/cube.obj");
-        // final List<IMesh> meshes = new ArrayList<>();
-        // new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().forEach(mesh ->
-        // meshes.add(mesh));
-        // final List<IMesh> merged = MeshUtilities.mergeMeshes(meshes);
-        //// p.setMesh(new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().get(0));
-          scene.add3DObjects(mplayer.getMesh());
-        // }
-
         cam = new Camera();
         scene.add3DObject(cam);
         controller.setCamera(view, cam);
@@ -134,19 +119,6 @@ public class GameWorld {
         light.setPosition(lightMesh.getPosition());
         scene.add3DObjects(light);
         scene.add3DObjects(lightMesh);
-
-        // Add blocks
-        for (int i = 0; i < 100; i++) {
-            Block block = new Block();
-            Random r = new Random();
-            int Low = -1000;
-            int High = 1000;
-            int x = r.nextInt(High - Low) + Low;
-            int y = r.nextInt(High - Low) + Low;
-            block.setPosition(new Vec3(x, y, 0));
-            this.blocks.add(block);
-            scene.add3DObject(block.getMesh());
-        }
 
     }
 
@@ -177,6 +149,7 @@ public class GameWorld {
 
         if (main) {
             this.mplayer = p;
+            this.controller.getScene().add3DObjects(mplayer.getMesh());
         }
     }
 
@@ -205,9 +178,9 @@ public class GameWorld {
         // + 2);
         Vec3 pos;
         if(rot > 0) {
-            pos = new Vec3(position.x+rot*2, position.y, position.z);
+            pos = new Vec3(position.x+Math.abs(rot)*2, position.y, position.z);
         } else if(rot < 0) {
-            pos = new Vec3(position.x+rot*2, position.y, position.z);
+            pos = new Vec3(position.x+Math.abs(rot)*2, position.y, position.z);
         } else {
             pos = new Vec3(position.x, position.y, position.z);
         }
@@ -290,6 +263,23 @@ public class GameWorld {
         Vec3 line_pos = position.subtract(rot_z.transform(new Vec3(2, 0, 0)));
         line.getMesh().setPosition(line_pos);
         controller.getScene().add3DObject(line.getMesh());
+    }
+
+    public void addBlocks(float[][] blocks) throws IOException {
+        for(int i = 0; i < blocks.length; i++) {
+            Block b = new Block(blocks[i][0], blocks[i][1]);
+            this.blocks.add(b);
+            this.controller.getScene().add3DObject(b.getMesh());
+        }        
+    }
+
+    public void addPowerUps(float[][] powerUps) {
+        for(int i = 0; i < powerUps.length; i++) {
+            PowerUp pu = new PowerUp(powerUps[i][0], powerUps[i][1]);
+            this.powerUps.add(pu);
+            this.controller.getScene().add3DObject(pu.getMesh());
+        }
+        
     }
 
 }

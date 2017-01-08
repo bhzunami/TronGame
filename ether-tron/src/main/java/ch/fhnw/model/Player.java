@@ -103,9 +103,6 @@ public class Player implements Serializable {
     }
     
     public void updatePosition(Vec3 position) {
-        if(position.x > 1000 || position.y > 1000) {
-            return;
-        }
         this.setPosition(position);
     }
     

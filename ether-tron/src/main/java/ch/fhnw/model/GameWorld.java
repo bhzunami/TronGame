@@ -35,6 +35,7 @@ import ch.fhnw.ether.scene.mesh.geometry.DefaultGeometry;
 import ch.fhnw.ether.scene.mesh.material.ColorMaterial;
 import ch.fhnw.ether.view.IView;
 import ch.fhnw.main.events.UserInput;
+import ch.fhnw.model.PowerUpShader.PowerUpMaterial;
 import ch.fhnw.util.color.RGB;
 import ch.fhnw.util.color.RGBA;
 import ch.fhnw.util.math.Mat4;
@@ -124,26 +125,31 @@ public class GameWorld {
         scene.add3DObjects(lightMesh);
 
     }
-
+    
+    List<List<IMesh>> shaders = new ArrayList<>();
+    
     /**
      * Main gain loop
      */
     public void run() {
-        controller.animate(new IEventScheduler.IAnimationAction() {
-            @Override
-            public void run(double time, double interval) {
-                // Read server input
-                try {
-                    sendUDPData();
-                    getUDPData(time);
-                } catch (SocketTimeoutException e) {
-                    // Ignore timeouts
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                controller.viewChanged(controller.getCurrentView());
-
+        controller.animate((time, interval) -> {
+            // Read server input
+            try {
+                sendUDPData();
+                getUDPData(time);
+            } catch (SocketTimeoutException e) {
+                // Ignore timeouts
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
+            
+            for(List<IMesh> meshes : shaders) {
+            	for(IMesh mesh : meshes) {
+            		((PowerUpMaterial) mesh.getMaterial()).setRedGain((float) Math.sin(time) + 1);	
+            	}
+            }
+            
+            controller.viewChanged(controller.getCurrentView());
         });
     }
     
@@ -220,9 +226,11 @@ public class GameWorld {
         // 12 Bytes rotation
         
         Long order = ByteBuffer.wrap(data, 0, 8).order(ByteOrder.LITTLE_ENDIAN).getLong();
+        
         if(order < this.udpOrder) {
             return;
         }
+        
         this.udpOrder = order;
         
         byte num_players = ByteBuffer.wrap(data, 8, 1).order(ByteOrder.LITTLE_ENDIAN).get();
@@ -305,7 +313,8 @@ public class GameWorld {
         for(int i = 0; i < powerUps.length; i++) {
             PowerUp pu = new PowerUp(powerUps[i][0], powerUps[i][1]);
             this.powerUps.add(pu);
-            this.controller.getScene().add3DObject(pu.getMesh());
+            this.controller.getScene().add3DObjects(pu.getMesh());
+            shaders.add(pu.getMesh());
         }
         
     }

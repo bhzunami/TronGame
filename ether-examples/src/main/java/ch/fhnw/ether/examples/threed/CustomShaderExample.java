@@ -101,14 +101,15 @@ public final class CustomShaderExample {
 
 	private static IMesh makeColoredTriangle() {
 		float[] vertices = {
-				0, 0, 0, 
-				0.5f, 0, 0.5f,
-				0, 0, 0.5f };
+			0, 0, 0, 
+			5f, 0, 5f,
+			0, 0, 5f 
+		};
 		float[] colors = { 
-				1, 0, 0, 1, 
-				0, 1, 0, 1, 
-				0, 0, 1, 1 
-				};
+			1, 0, 0, 1, 
+			0, 1, 0, 1, 
+			0, 0, 1, 1 
+		};
 
 		DefaultGeometry g = DefaultGeometry.createVC(vertices, colors);
 		return new DefaultMesh(Primitive.TRIANGLES, new CustomMaterial(2f), g);

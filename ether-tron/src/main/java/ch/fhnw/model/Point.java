@@ -11,7 +11,7 @@ public class Point {
     private Vec3 position;
     
     public Point() {
-        this.position = new Vec3(0f, 0f, -20f);
+        this.position = new Vec3(2000f, 0f, -20f);
         this.mesh = MeshUtilities.createCube();
         this.mesh.setPosition(this.position);
     }

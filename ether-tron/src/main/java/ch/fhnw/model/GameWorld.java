@@ -61,6 +61,8 @@ public class GameWorld {
     private IMesh ground = MeshUtilities.createGroundPlane(1000);
 
     private final int offset = 40;
+    
+    private long udpOrder = 0;
 
     DatagramSocket udpSocket;
     private double time = 0f;
@@ -203,6 +205,7 @@ public class GameWorld {
         for(Point point : p.getTrace().getPoints()) {
             this.controller.getScene().remove3DObject(point.getMesh());
         }
+        this.controller.getScene().remove3DObjects(p.getMesh());
     }
 
     private void getUDPData(double time) throws IOException {
@@ -210,27 +213,36 @@ public class GameWorld {
         this.packet.getData();
         byte[] data = this.packet.getData();
 
+        // 8 Bytes = order
         // 1 byte = num players
         // 16 Bytes = uuid
         // 12 Bytes position
         // 12 Bytes rotation
-        byte num_players = ByteBuffer.wrap(data, 0, 1).order(ByteOrder.LITTLE_ENDIAN).get();
+        
+        Long order = ByteBuffer.wrap(data, 0, 8).order(ByteOrder.LITTLE_ENDIAN).getLong();
+        if(order < this.udpOrder) {
+            return;
+        }
+        this.udpOrder = order;
+        
+        byte num_players = ByteBuffer.wrap(data, 8, 1).order(ByteOrder.LITTLE_ENDIAN).get();
+        System.out.println("Active Players: " +num_players);
         Set<String> activePlayers = new ArraySet<>();
 
         for (int i = 0; i < num_players; i++) {
             int index = offset * i;
-            byte[] uuid = Arrays.copyOfRange(data, index + 1, index + 17);
+            byte[] uuid = Arrays.copyOfRange(data, index + 9, index + 25);
             ByteBuffer byteBuffer = ByteBuffer.wrap(uuid);
             Long high = byteBuffer.getLong();
             Long low = byteBuffer.getLong();
 
-            Vec3 player_pos = new Vec3(ByteBuffer.wrap(data, index + 17, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
-                    ByteBuffer.wrap(data, index + 21, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
-                    ByteBuffer.wrap(data, index + 25, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat());
+            Vec3 player_pos = new Vec3(ByteBuffer.wrap(data, index + 25, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
+                    ByteBuffer.wrap(data, index + 29, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
+                    ByteBuffer.wrap(data, index + 33, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat());
 
-            Vec3 rotation = new Vec3(ByteBuffer.wrap(data, index + 29, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
-                    ByteBuffer.wrap(data, index + 33, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
-                    ByteBuffer.wrap(data, index + 37, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat());
+            Vec3 rotation = new Vec3(ByteBuffer.wrap(data, index + 37, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
+                    ByteBuffer.wrap(data, index + 41, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat(),
+                    ByteBuffer.wrap(data, index + 45, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat());
 
             String puuid = new UUID(high, low).toString();
             Player p = players.get(puuid);
@@ -255,12 +267,6 @@ public class GameWorld {
             p.rotate(Mat4.multiply(rot_z, rot_x));
             
             p.getTrace().notify(p.getPositionCopy());
-//            this.trace[this.traceIterator].setPosition(p.getPositionCopy());
-//            this.traceIterator++;
-//            if(this.traceIterator >= this.trace.length) {
-//                this.traceIterator = 0;
-//            }
-
             
             if (p == mplayer) {
                 Vec3 ppos = mplayer.getPosition();
@@ -273,13 +279,15 @@ public class GameWorld {
         
         // Check if player is deleted
         
-        if(this.players.size() > activePlayers.size()) {
-            // Remove a player
-            for(String id : this.players.keySet()) {
-                if(!activePlayers.contains(id))
-                    this.removePlayer(this.players.get(id));
-            }
-        }
+//        if(this.players.size() > activePlayers.size()) {
+//            // Remove a player
+//            for(Object id : this.players.keySet().toArray()) {
+//                if(!activePlayers.contains((String)id))
+//                    this.removePlayer(this.players.get((String)id));
+//                    this.players.remove((String)id);
+//
+//            }
+//        }
 
     }
     

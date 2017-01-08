@@ -7,6 +7,7 @@ import (
 	"github.com/satori/go.uuid"
 	"log"
 	"math"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
@@ -14,6 +15,36 @@ import (
 	"time"
 	"unsafe"
 )
+
+const PowerUpVelocityMultiplier = 1.5
+
+var (
+	Blocks      = [100][2]float32{}
+	PowerUps    = [20][2]float32{}
+	BlockSize   = [3]float32{5, 8}
+	PowerUpSize = [3]float32{10, 10}
+	DamageSize  = [3]float32{2, 2}
+)
+
+func init() {
+
+	rand.Seed(time.Now().UnixNano())
+
+	for i, _ := range Blocks {
+		Blocks[i] = [2]float32{
+			(2000.0 * rand.Float32()) - 1000.0,
+			(2000.0 * rand.Float32()) - 1000.0,
+		}
+	}
+
+	for i, _ := range PowerUps {
+		PowerUps[i] = [2]float32{
+			(2000.0 * rand.Float32()) - 1000.0,
+			(2000.0 * rand.Float32()) - 1000.0,
+		}
+	}
+
+}
 
 const (
 	DegreeInRadians = (2 * math.Pi) / 360 // 0.0174532925199432954743716805978692718781530857086181640625
@@ -41,11 +72,18 @@ var (
 	}
 )
 
+type DamageBuffer struct {
+	Coordinates [600][2]float32
+	Iterator    int
+}
+
 type PlayerState struct {
 	Connection *net.UDPConn
 	Position   [3]float32
 	Rotation   [3]float32
 	LastPing   time.Time
+	Velocity   float32
+	Damage     *DamageBuffer
 }
 
 var Players = struct {
@@ -188,7 +226,7 @@ func readPlayerKeys() {
 		Players.Lock.Lock()
 		ps, ok := Players.Store[id]
 		if !ok {
-			log.Println("No player with UUID:", id)
+			// log.Println("No player with UUID:", id)
 			Players.Lock.Unlock()
 			continue
 		}
@@ -196,14 +234,14 @@ func readPlayerKeys() {
 
 		{ // always go forward
 			angle := float64(ps.Rotation[2])
-			ps.Position[0] += 3 * float32(math.Cos(angle))
-			ps.Position[1] += 3 * float32(math.Sin(angle))
+			ps.Position[0] += ps.Velocity * float32(math.Cos(angle))
+			ps.Position[1] += ps.Velocity * float32(math.Sin(angle))
 		}
 
 		if km&KeyBackward == KeyBackward {
 			angle := float64(ps.Rotation[2])
-			ps.Position[0] -= 1.5 * float32(math.Cos(angle))
-			ps.Position[1] -= 1.5 * float32(math.Sin(angle))
+			ps.Position[0] -= (ps.Velocity / 2) * float32(math.Cos(angle))
+			ps.Position[1] -= (ps.Velocity / 2) * float32(math.Sin(angle))
 		}
 
 		if km&KeyLeft == KeyLeft {
@@ -247,8 +285,91 @@ func readPlayerKeys() {
 			}
 		}
 
+		collision, center := detectCollision(ps.Position[0], ps.Position[1])
+		_ = center
+
+		switch collision {
+
+		case BlockCollision:
+			delete(Players.Store, id)
+
+		case WorldCollision:
+			ps.Rotation[2] += (180 * DegreeInRadians)
+
+		case PowerUpCollision:
+			ps.Velocity *= PowerUpVelocityMultiplier
+			go func(id uuid.UUID) {
+				time.Sleep(time.Second * 2)
+				Players.Lock.Lock()
+				defer Players.Lock.Unlock()
+				if ps, ok := Players.Store[id]; ok {
+					ps.Velocity /= PowerUpVelocityMultiplier
+				}
+			}(id)
+
+		default:
+			x, y := ps.Position[0], ps.Position[1]
+			for oid, state := range Players.Store {
+				if oid == id {
+					continue // own points make no damage
+				}
+				for _, cor := range state.Damage.Coordinates {
+					low, high := [2]float32{cor[0] - DamageSize[0], cor[1] - DamageSize[0]}, [2]float32{cor[0] + DamageSize[0], cor[1] + DamageSize[0]}
+					if x >= low[0] && y >= low[1] && x <= high[0] && y <= high[1] {
+						log.Println(oid.String(), "killed", id.String())
+						delete(Players.Store, id)
+					}
+				}
+			}
+
+		}
+
+		{ // set damage point
+			n := ps.Damage.Iterator
+			ps.Damage.Coordinates[n] = [2]float32{ps.Position[0], ps.Position[1]}
+			n++
+			if n >= len(ps.Damage.Coordinates) {
+				n = 0
+			}
+			ps.Damage.Iterator = n
+		}
+
 		Players.Lock.Unlock()
 	}
+}
+
+type Collision string
+
+const (
+	NoCollision      Collision = "none"
+	BlockCollision   Collision = "block"
+	PowerUpCollision Collision = "powerUp"
+	// PlayerCollision  Collision = "player"
+	WorldCollision Collision = "world"
+)
+
+// PRECONDITION: player store is locked
+func detectCollision(x, y float32) (Collision, [2]float32) {
+
+	if x >= 1000 || x <= -1000 || y >= 1000 || y <= -1000 {
+		return WorldCollision, [2]float32{x, y}
+	}
+
+	for _, block := range Blocks {
+		low, high := [2]float32{block[0] - BlockSize[0], block[1] - BlockSize[0]}, [2]float32{block[0] + BlockSize[0], block[1] + BlockSize[0]}
+		if x >= low[0] && y >= low[1] && x <= high[0] && y <= high[1] {
+			return BlockCollision, block
+		}
+	}
+
+	for _, powerUp := range PowerUps {
+		low, high := [2]float32{powerUp[0] - PowerUpSize[0], powerUp[1] - PowerUpSize[0]}, [2]float32{powerUp[0] + PowerUpSize[0], powerUp[1] + PowerUpSize[0]}
+		if x >= low[0] && y >= low[1] && x <= high[0] && y <= high[1] {
+			return PowerUpCollision, powerUp
+		}
+	}
+
+	return NoCollision, [2]float32{0, 0}
 }
 
 func serveTCP() {
@@ -302,8 +423,11 @@ type JoinRequest struct {
 	Name string   `json:"name"`
 	Port int      `json:"port"` // for UDP
 }
+
 type JoinResponse struct {
-	Id string `json:"id"`
+	Id       string          `json:"id"`
+	Blocks   [100][2]float32 `json:"blocks"`
+	PowerUps [20][2]float32  `json:"powerUps"`
 }
 
 type TcpRequest struct {
@@ -353,12 +477,16 @@ func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 	Players.Lock.Lock()
 	Players.Store[id] = &PlayerState{
 		Connection: conn,
-		Position:   [3]float32{0, 0, 5},
+		Position:   [3]float32{(2000.0 * rand.Float32()) - 1000.0, (2000.0 * rand.Float32()) - 1000.0, 5},
 		Rotation:   [3]float32{0, 0, 0},
+		Velocity:   3,
+		Damage:     &DamageBuffer{},
 	}
 	Players.Lock.Unlock()
 
 	res.Id = id.String()
+	res.Blocks = Blocks
+	res.PowerUps = PowerUps
 	return res, nil
 }
 

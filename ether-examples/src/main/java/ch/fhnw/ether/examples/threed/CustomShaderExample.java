@@ -57,7 +57,8 @@ public final class CustomShaderExample {
 	static final class CustomMaterial extends AbstractMaterial implements ICustomMaterial {
 		private static class Shader extends AbstractShader {
 			public Shader() {
-				super(CustomShaderExample.class, "custom_shader_example.custom_shader", "/shaders/custom_shader", Primitive.TRIANGLES);
+				super(CustomShaderExample.class, "custom_shader_example.custom_shader", "/shaders/custom_shader",
+						Primitive.TRIANGLES);
 				addArray(new PositionArray());
 				addArray(new ColorArray());
 
@@ -82,7 +83,7 @@ public final class CustomShaderExample {
 			this.redGain = redGain;
 			updateRequest();
 		}
-		
+
 		@Override
 		public IShader getShader() {
 			return shader;
@@ -99,8 +100,15 @@ public final class CustomShaderExample {
 	}
 
 	private static IMesh makeColoredTriangle() {
-		float[] vertices = { 0, 0, 0, 0.5f, 0, 0.5f, 0, 0, 0.5f };
-		float[] colors = { 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1 };
+		float[] vertices = {
+				0, 0, 0, 
+				0.5f, 0, 0.5f,
+				0, 0, 0.5f };
+		float[] colors = { 
+				1, 0, 0, 1, 
+				0, 1, 0, 1, 
+				0, 0, 1, 1 
+				};
 
 		DefaultGeometry g = DefaultGeometry.createVC(vertices, colors);
 		return new DefaultMesh(Primitive.TRIANGLES, new CustomMaterial(2f), g);
@@ -112,12 +120,13 @@ public final class CustomShaderExample {
 	public CustomShaderExample() {
 		// Init platform
 		Platform.get().init();
-		
+
 		// Create controller
 		IController controller = new DefaultController();
 		controller.run(time -> {
 			// Create view
-			new DefaultView(controller, 100, 100, 500, 500, new IView.Config(ViewType.INTERACTIVE_VIEW, 0, new IView.ViewFlag[0]), "Test");
+			new DefaultView(controller, 100, 100, 500, 500,
+					new IView.Config(ViewType.INTERACTIVE_VIEW, 0, new IView.ViewFlag[0]), "Test");
 
 			// Create scene and add triangle
 			IScene scene = new DefaultScene(controller);
@@ -129,7 +138,7 @@ public final class CustomShaderExample {
 		controller.animate((time, interval) -> {
 			((CustomMaterial) mesh.getMaterial()).setRedGain((float) Math.sin(time) + 1);
 		});
-		
+
 		Platform.get().run();
 	}
 }

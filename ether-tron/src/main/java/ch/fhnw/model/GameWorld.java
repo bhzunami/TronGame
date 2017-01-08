@@ -114,7 +114,7 @@ public class GameWorld {
         // meshes.add(mesh));
         // final List<IMesh> merged = MeshUtilities.mergeMeshes(meshes);
         //// p.setMesh(new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().get(0));
-          scene.add3DObject(mplayer.getMesh());
+          scene.add3DObjects(mplayer.getMesh());
         // }
 
         cam = new Camera();
@@ -212,6 +212,8 @@ public class GameWorld {
             pos = new Vec3(position.x, position.y, position.z);
         }
         
+//        pos = pos.add(new Vec3(0, 0, 5));
+        
         cam.setPosition(pos);
         cam.setTarget(direction);
 
@@ -251,7 +253,7 @@ public class GameWorld {
                 p = new Player("test");
                 p.setId(puuid);
                 this.addPlayer(p, false);
-                this.controller.getScene().add3DObject(p.getMesh());
+                this.controller.getScene().add3DObjects(p.getMesh());
             }
 
             // Calculate rotation of player
@@ -273,7 +275,7 @@ public class GameWorld {
             
             if (p == mplayer) {
                 Vec3 ppos = mplayer.getPosition();
-                updateCamera(ppos.subtract(rot_z.transform(new Vec3(5, 0, -1))), ppos, rotation.x);
+                updateCamera(ppos.subtract(rot_z.transform(new Vec3(25, 0, -5))), ppos, rotation.x);
             }
 
             p.setDirection(rotation);

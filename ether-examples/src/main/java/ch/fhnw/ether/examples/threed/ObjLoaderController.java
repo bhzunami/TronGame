@@ -51,12 +51,13 @@ public class ObjLoaderController extends DefaultController {
 	
 	private static final Vec3[][] CAM_PARAMS = {
 		//@formatter:off
-		{ new Vec3(5, 0, 0), Vec3.Z }, 
-		{ new Vec3(-5, 0, 0), Vec3.Z },
-		{ new Vec3(0, 5, 0), Vec3.Z }, 
-		{ new Vec3(0, -5, 0), Vec3.Z }, 
-		{ new Vec3(0, 0, 5), Vec3.Y }, 
-		{ new Vec3(0, 0, -5), Vec3.Y_NEG }
+		{ new Vec3(15, 0, 0), Vec3.Z }, 
+		{ new Vec3(-15, 0, 0), Vec3.Z },
+		{ new Vec3(0, 15, 0), Vec3.Z }, 
+		{ new Vec3(0, -15, 0), Vec3.Z }, 
+		{ new Vec3(0, 0, 15), Vec3.Y }, 
+		{ new Vec3(0, 0, -15), Vec3.Y_NEG },
+		{ new Vec3(-15, -15, 15), Vec3.Z },
 		//@formatter:on
 	};
 
@@ -72,6 +73,7 @@ public class ObjLoaderController extends DefaultController {
 		case GLFW.GLFW_KEY_4:
 		case GLFW.GLFW_KEY_5:
 		case GLFW.GLFW_KEY_6:
+		case GLFW.GLFW_KEY_7:
 			Vec3[] params = CAM_PARAMS[e.getKey() - GLFW.GLFW_KEY_1];
 			ICamera camera = getCamera(getCurrentView());
 			camera.setPosition(params[0]);

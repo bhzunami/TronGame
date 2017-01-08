@@ -31,13 +31,23 @@
 
 package ch.fhnw.ether.examples.threed;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
 import ch.fhnw.ether.controller.DefaultController;
 import ch.fhnw.ether.controller.IController;
+import ch.fhnw.ether.formats.IModelReader.Options;
+import ch.fhnw.ether.formats.obj.ObjReader;
 import ch.fhnw.ether.platform.Platform;
 import ch.fhnw.ether.render.shader.IShader;
 import ch.fhnw.ether.render.shader.base.AbstractPostShader;
 import ch.fhnw.ether.scene.DefaultScene;
 import ch.fhnw.ether.scene.IScene;
+import ch.fhnw.ether.scene.light.DirectionalLight;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.IMesh.Primitive;
 import ch.fhnw.ether.scene.mesh.IMesh.Queue;
@@ -48,6 +58,8 @@ import ch.fhnw.ether.scene.mesh.material.ICustomMaterial;
 import ch.fhnw.ether.view.DefaultView;
 import ch.fhnw.ether.view.IView;
 import ch.fhnw.ether.view.IView.ViewType;
+import ch.fhnw.util.color.RGB;
+import ch.fhnw.util.math.Vec3;
 
 public final class PostFXExample {
 	public static final class PostMaterial extends AbstractMaterial implements ICustomMaterial {
@@ -83,11 +95,26 @@ public final class PostFXExample {
 		
 		IController controller = new DefaultController();
 		controller.run(time -> {
+			
 			new DefaultView(controller, 100, 100, 500, 500, new IView.Config(ViewType.INTERACTIVE_VIEW, 0, new IView.ViewFlag[0]), "Test");
 
 			IScene scene = new DefaultScene(controller);
 			controller.setScene(scene);
-
+			
+			scene.add3DObject(new DirectionalLight(new Vec3(1, 1, 1), RGB.BLACK, RGB.WHITE));
+			
+//			URL obj;
+//			try {
+//				obj = new File("blender.obj").toURI().toURL();
+//				final List<IMesh> meshes = new ArrayList<>();
+//					new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().forEach(mesh -> meshes.add(mesh));
+//				final List<IMesh> merged = MeshUtilities.mergeMeshes(meshes);
+//				scene.add3DObjects(merged);
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+			
 			scene.add3DObject(MeshUtilities.createCube());
 
 			scene.add3DObject(MeshUtilities.createQuad(new PostMaterial(), Queue.POST, IMesh.NO_FLAGS));

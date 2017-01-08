@@ -1,10 +1,16 @@
 package ch.fhnw.model;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import ch.fhnw.ether.formats.IModelReader.Options;
+import ch.fhnw.ether.formats.obj.ObjReader;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
 import ch.fhnw.util.math.Mat4;
@@ -15,7 +21,7 @@ public class Player implements Serializable {
     private static final long serialVersionUID = 3003306163179867285L;
 
     @JsonIgnore
-    private IMesh mesh;
+    private List<IMesh> mesh;
     private String name;
     private String id;
     private float abs_rot_angle = 0f;
@@ -26,22 +32,32 @@ public class Player implements Serializable {
     
     public Player(String name) throws IOException {
         this.name = name;
-        this.mesh = MeshUtilities.createCube();
+        this.mesh = Player.getPlayerMesh("blender.obj");
         this.direction = new Vec3(1, 0, 0);
 
+
+    }
+    
+    public static List<IMesh> getPlayerMesh(String filename) throws IOException {
+        //final URL obj = new File(filename).toURI().toURL();
+        final URL obj = Player.class.getResource("/models/" + filename);
+    	final List<IMesh> meshes = new ArrayList<>();
+    	new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().forEach(mesh -> meshes.add(mesh));
+    	
+    	return MeshUtilities.mergeMeshes(meshes);
     }
     
     @JsonIgnore
     public Vec3 getPosition() {
-        return this.mesh.getPosition();
+        return this.mesh.get(0).getPosition();
     }
     
     public Vec3 getPositionCopy() {
-        return new Vec3(this.mesh.getPosition().x, this.mesh.getPosition().y, this.mesh.getPosition().z);
+        return new Vec3(this.mesh.get(0).getPosition().x, this.mesh.get(0).getPosition().y, this.mesh.get(0).getPosition().z);
     }
     
     public void setPosition(Vec3 pos) {
-        this.mesh.setPosition(pos);
+        this.mesh.get(0).setPosition(pos);
     }
     
     public String getId() {
@@ -60,12 +76,8 @@ public class Player implements Serializable {
         this.name = name;
     }
     
-    public void setMesh(IMesh mesh) {
-        this.mesh = mesh;
-    }
-    
     @JsonIgnore
-    public IMesh getMesh() {
+    public List<IMesh> getMesh() {
         return this.mesh;
     }
     
@@ -99,7 +111,9 @@ public class Player implements Serializable {
     
     
     public void rotate(Mat4 transformation) {
-        this.mesh.setTransform(transformation);
+    	for(IMesh mesh : this.mesh) {
+    		mesh.setTransform(transformation);	
+    	}
     }
 
 }

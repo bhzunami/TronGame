@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"github.com/satori/go.uuid"
@@ -55,8 +56,8 @@ const (
 	UDP_PORT       = 7607
 	TCP_BUF_CAP    = 1024
 	UDP_BUF_CAP    = 1024
-	TIME_PERIOD    = 17 * time.Millisecond // ~60fps
-	PLAYER_TIMEOUT = 100 * time.Second
+	TIME_PERIOD    = 10 * time.Millisecond
+	PLAYER_TIMEOUT = 5 * time.Second
 )
 
 var (
@@ -73,8 +74,8 @@ var (
 )
 
 type DamageBuffer struct {
-	Coordinates [600][2]float32
 	Iterator    int
+	Coordinates [600][2]float32
 }
 
 type PlayerState struct {
@@ -132,6 +133,7 @@ func gcPlayers() {
 			if state.LastPing.Before(now.Add(-PLAYER_TIMEOUT)) {
 				log.Println("Player GC:", state)
 				delete(Players.Store, id)
+				state.Connection.Close()
 			}
 		}
 		Players.Lock.Unlock()
@@ -153,6 +155,9 @@ func updatePlayerPositions() {
 
 	bf := bytes.NewBuffer(nil)
 
+	counter := uint64(0)
+	counterBytes := make([]byte, 8, 8)
+
 	for {
 
 		time.Sleep(TIME_PERIOD)
@@ -161,6 +166,11 @@ func updatePlayerPositions() {
 		amountOfPlayers := byte(len(Players.Store))
 
 		for id, state := range Players.Store {
+
+			{ // order header
+				binary.LittleEndian.PutUint64(counterBytes, counter)
+				bf.Write(counterBytes)
+			}
 
 			bf.WriteByte(amountOfPlayers)
 			writePlayerSegment(bf, id, state)
@@ -178,6 +188,7 @@ func updatePlayerPositions() {
 		}
 
 		Players.Lock.RUnlock()
+		counter++
 	}
 }
 
@@ -219,7 +230,7 @@ func readPlayerKeys() {
 		km := pu.Keys
 		id, e := uuid.FromString(pu.UUID)
 		if e != nil {
-			log.Println("Error decoding UUID from UDP:", e)
+			log.Println("Error decoding UUID from UDP JSON:", e)
 			continue
 		}
 
@@ -291,12 +302,15 @@ func readPlayerKeys() {
 		switch collision {
 
 		case BlockCollision:
+			log.Println(id.String(), "crashed into a block")
 			delete(Players.Store, id)
+			ps.Connection.Close()
 
 		case WorldCollision:
 			ps.Rotation[2] += (180 * DegreeInRadians)
 
 		case PowerUpCollision:
+			log.Println(id.String(), "caught a power-up")
 			ps.Velocity *= PowerUpVelocityMultiplier
 			go func(id uuid.UUID) {
 				time.Sleep(time.Second * 2)
@@ -318,6 +332,7 @@ func readPlayerKeys() {
 					if x >= low[0] && y >= low[1] && x <= high[0] && y <= high[1] {
 						log.Println(oid.String(), "killed", id.String())
 						delete(Players.Store, id)
+						ps.Connection.Close()
 					}
 				}
 			}
@@ -344,8 +359,7 @@ const (
 	NoCollision      Collision = "none"
 	BlockCollision   Collision = "block"
 	PowerUpCollision Collision = "powerUp"
-	// PlayerCollision  Collision = "player"
-	WorldCollision Collision = "world"
+	WorldCollision   Collision = "world"
 )
 
 // PRECONDITION: player store is locked
@@ -483,6 +497,8 @@ func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 		Damage:     &DamageBuffer{},
 	}
 	Players.Lock.Unlock()
+
+	log.Println(id, "joined")
 
 	res.Id = id.String()
 	res.Blocks = Blocks

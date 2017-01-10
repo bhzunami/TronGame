@@ -117,7 +117,7 @@ public class PowerUpShader {
         
         for(int i = 0; i < colors.length; i++) {
             DefaultGeometry g = DefaultGeometry.createVC(vertices[i], colors[i]);
-            meshes.add(new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(new RGBA(colors[i])), g));
+            meshes.add(new DefaultMesh(Primitive.TRIANGLES, new PowerUpMaterial(2), g));
         }
         
         

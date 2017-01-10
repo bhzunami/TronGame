@@ -1,36 +1,49 @@
 package ch.fhnw.helper;
 
-import ch.fhnw.ether.scene.IScene;
+import java.util.ArrayList;
+import java.util.List;
+
+import ch.fhnw.ether.scene.mesh.IMesh;
+import ch.fhnw.ether.scene.mesh.MeshUtilities;
 import ch.fhnw.model.Point;
 import ch.fhnw.util.math.Vec3;
 
 public class Trace {
     
-    private Point[] points;
-    private int traceIterator;
+    private List<IMesh> points;
+    
+    private List<IMesh> merged;
+    
+    private int traceIterator = 0;
+    private int numPoints;
     
     
     public Trace(int numPoints) {
-        this.points = new Point[numPoints];
+        this.numPoints = numPoints;
+        this.points = new ArrayList<>();
         
-        for(int i = 0; i < this.points.length; i++) {
+        for(int i = 0; i < numPoints; i++) {
             Point point = new Point();
-            points[i] = point;
+            points.add(point.getMesh());
         }
+        
+        merged = MeshUtilities.mergeMeshes(this.points);
         
     }
     
-    public Point[] getPoints() {
-        return this.points;
+    public List<IMesh> getPoints() {
+        return merged;
     }
     
     
     public void notify(Vec3 position) {
-        this.points[this.traceIterator].setPosition(position);
+        this.points.get(this.traceIterator).setPosition(position);
         this.traceIterator++;
-        if(this.traceIterator >= this.points.length) {
+        if(this.traceIterator >= numPoints) {
             this.traceIterator = 0;
         }
+        
+        merged = MeshUtilities.mergeMeshes(this.points);
     }
 
 }

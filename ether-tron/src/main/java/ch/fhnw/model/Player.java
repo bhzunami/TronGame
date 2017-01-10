@@ -10,6 +10,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import ch.fhnw.ether.formats.IModelReader.Options;
 import ch.fhnw.ether.formats.obj.ObjReader;
+import ch.fhnw.ether.scene.I3DObject;
+import ch.fhnw.ether.scene.camera.Camera;
+import ch.fhnw.ether.scene.camera.ICamera;
+import ch.fhnw.ether.scene.light.ILight;
+import ch.fhnw.ether.scene.light.SpotLight;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
 import ch.fhnw.helper.Trace;
@@ -28,6 +33,10 @@ public class Player implements Serializable {
     private float abs_rot_angle = 0f;
     private Vec3 direction;
     private Trace trace;
+    private ILight light;
+    private ICamera backCam;
+    private ICamera frontCam;
+    private ICamera activeCam;
     
     
     public Player() {}
@@ -37,6 +46,10 @@ public class Player implements Serializable {
         this.mesh = Player.getPlayerMesh("blender.obj");
         this.direction = new Vec3(1, 0, 0);
         this.trace = new Trace(NUMPOINTS);
+        this.light = new SpotLight(Vec3.Z, GameWorld.AMBIENT, GameWorld.COLOR, Vec3.Z, 0, 0);
+        this.backCam = new Camera();
+        this.frontCam = new Camera();
+        this.activeCam = this.frontCam;
 
 
     }
@@ -122,5 +135,62 @@ public class Player implements Serializable {
         return this.trace;
     }
     
+    public void setLight(Vec3 direction) {
+        light = new SpotLight(this.getPosition(), GameWorld.AMBIENT, GameWorld.COLOR, direction, 10, 0);
+    }
+    
+    public ILight getLight() {
+        return this.light;
+    }
+    
+    public void setFrontCamera(Vec3 position, float rot) {
+        Vec3 pos;
+        if(rot > 0) {
+            pos = new Vec3(position.x+Math.abs(rot)*2, position.y, position.z);
+        } else if(rot < 0) {
+            pos = new Vec3(position.x+Math.abs(rot)*2, position.y, position.z);
+        } else {
+            pos = new Vec3(position.x, position.y, position.z);
+        }
+                
+        this.frontCam.setPosition(pos);
+        this.frontCam.setTarget(this.getPosition());
+    }
+    
+    
+    public void setBackCamera(Vec3 position, float rot) {
+        Vec3 pos;
+        if(rot > 0) {
+            pos = new Vec3(position.x+Math.abs(rot)*2, position.y, position.z);
+        } else if(rot < 0) {
+            pos = new Vec3(position.x+Math.abs(rot)*2, position.y, position.z);
+        } else {
+            pos = new Vec3(position.x, position.y, position.z);
+        }
+                
+        this.backCam.setPosition(pos);
+        this.backCam.setTarget(this.getPosition());
+    }
+    
+    
+    public ICamera switchCamera() {
+        if(this.activeCam == this.frontCam) {
+            return this.activeCam = this.backCam;
+        } else {
+            return this.activeCam = this.frontCam;
+        }
+    }
+    
+    
+    public ICamera getCamera() {
+        return this.activeCam;
+    }
+
+    public List<ICamera> getCameras() {
+        List<ICamera> cameras = new ArrayList<>();
+        cameras.add(this.frontCam);
+        cameras.add(this.backCam);
+        return cameras;
+    }
 
 }

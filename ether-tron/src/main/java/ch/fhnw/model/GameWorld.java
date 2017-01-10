@@ -21,18 +21,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.fhnw.ether.controller.IController;
 import ch.fhnw.ether.controller.event.IEventScheduler;
+import ch.fhnw.ether.image.IGPUImage;
 import ch.fhnw.ether.scene.IScene;
 import ch.fhnw.ether.scene.camera.Camera;
 import ch.fhnw.ether.scene.camera.ICamera;
 import ch.fhnw.ether.scene.light.DirectionalLight;
 import ch.fhnw.ether.scene.light.ILight;
+import ch.fhnw.ether.scene.light.PointLight;
+import ch.fhnw.ether.scene.light.SpotLight;
 import ch.fhnw.ether.scene.mesh.DefaultMesh;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.IMesh.Flag;
 import ch.fhnw.ether.scene.mesh.IMesh.Primitive;
+import ch.fhnw.ether.scene.mesh.IMesh.Queue;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
 import ch.fhnw.ether.scene.mesh.geometry.DefaultGeometry;
+import ch.fhnw.ether.scene.mesh.material.ColorMapMaterial;
 import ch.fhnw.ether.scene.mesh.material.ColorMaterial;
+import ch.fhnw.ether.scene.mesh.material.ShadedMaterial;
 import ch.fhnw.ether.view.IView;
 import ch.fhnw.main.events.UserInput;
 import ch.fhnw.model.PowerUpShader.PowerUpMaterial;
@@ -48,19 +54,28 @@ public class GameWorld {
     // The player which plays on this view
     private Player mplayer;
     private HashMap<String, Player> players = new HashMap<>();
-    private ICamera cam;
+//    private ICamera cam;
     private List<Block> blocks = new ArrayList<>();
     private List<PowerUp> powerUps = new ArrayList<>();
     private Point[] trace = new Point[600];
     
     private int traceIterator = 0;
     private IController controller;
-    private static final RGB AMBIENT = RGB.BLACK;
-    private static final RGB COLOR = RGB.YELLOW;
-    private ILight light = new DirectionalLight(Vec3.Z, AMBIENT, COLOR);
-    private IMesh lightMesh;
-    private IMesh ground = MeshUtilities.createGroundPlane(1000);
+    public static final RGB AMBIENT = RGB.BLACK;
+    public static final RGB COLOR = RGB.YELLOW;
+    
+//    private ILight light = new PointLight(new Vec3(0, 0, 20), AMBIENT, COLOR, 10);
+    
+    private ILight light2 = new PointLight(new Vec3(10, 0, 20), AMBIENT, COLOR, 1000);
+    private ILight light3 = new PointLight(new Vec3(50, 0, 20), AMBIENT, COLOR, 10);
+//    private ILight light = new DirectionalLight(new Vec3(1,1,1), AMBIENT, COLOR);
+//    private ILight light = new SpotLight(Vec3.Z, AMBIENT, COLOR, Vec3.Z, 0, 0);
 
+    private IMesh lightMesh;
+    
+    IGPUImage t = IGPUImage.read(GameWorld.class.getResource("/textures/tron.jpg"));
+    private IMesh ground = MeshUtilities.createGroundPlane(new ColorMapMaterial(t), 1000);
+    
     private final int offset = 40;
     
     private long udpOrder = 0;
@@ -98,30 +113,29 @@ public class GameWorld {
 
     }
 
-    // public void playerMoved(Vec3 pos) {
-    // ICamera camera = this.controller.getScene().getCameras().get(0);
-    // camera.setPosition(pos);
-    // }
 
     public void createWorld(IScene scene, IView view) throws IOException {
         System.out.println("Create Game world");
 
-        cam = new Camera();
-        scene.add3DObject(cam);
-        controller.setCamera(view, cam);
+        // Set main player camera
+        List<ICamera> cameras = mplayer.getCameras();
+        controller.setCamera(view, cameras.get(0));
 
         // Ground
         scene.add3DObject(ground);
-
+       
         // Lights
         // Add first light and light geometry
         GeodesicSphere s = new GeodesicSphere(4);
         lightMesh = new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(RGBA.YELLOW),
                 DefaultGeometry.createV(s.getTriangles()), Flag.DONT_CAST_SHADOW);
-        lightMesh.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 0.1f, 0.1f, 0.1f));
-        lightMesh.setPosition(new Vec3(0, 0, 2));
-        light.setPosition(lightMesh.getPosition());
-        scene.add3DObjects(light);
+        lightMesh.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 10f, 10f, 10f));
+        lightMesh.setPosition(new Vec3(0, 0, 100));
+        
+        //light.setPosition(lightMesh.getPosition());
+//        scene.add3DObjects(light);
+//        scene.add3DObjects(light3);
+        
         scene.add3DObjects(lightMesh);
 
     }
@@ -156,21 +170,34 @@ public class GameWorld {
 
     public void addPlayer(Player p, boolean main) {
         this.players.put(p.getId(), p);
+        List<IMesh> x = p.getTrace().getPoints();
+        System.out.println(x.size());
+        this.controller.getScene().add3DObjects(x);
+        this.controller.getScene().add3DObjects(p.getLight());
+
         
-        for(Point point : p.getTrace().getPoints()) {
-            this.controller.getScene().add3DObject(point.getMesh());
-        }
+//        for(Point point : p.getTrace().getPoints()) {
+//            this.controller.getScene().add3DObject(point.getMesh());
+//        }
         
 
         if (main) {
             this.mplayer = p;
             this.controller.getScene().add3DObjects(mplayer.getMesh());
+            this.controller.getScene().add3DObjects(mplayer.getCameras());
+
         }
     }
 
     public void setMovemnet(int movement, boolean pressed) {
         UserInput mov = UserInput.getEnumByKey(movement);
         // Remove
+        if(UserInput.getEnumByKey(movement) == UserInput.SPACE && pressed) {
+            System.out.println("SPACE");
+            controller.setCamera(controller.getCurrentView(), mplayer.switchCamera());
+
+            ;
+        }
         if (pressed) {
             this.userInputs.add(mov);
         } else {
@@ -202,17 +229,17 @@ public class GameWorld {
         
 //        pos = pos.add(new Vec3(0, 0, 5));
         
-        cam.setPosition(pos);
-        cam.setTarget(direction);
+//        cam.setPosition(pos);
+//        cam.setTarget(direction);
 
     }
     
-    private void removePlayer(Player p) {
-        for(Point point : p.getTrace().getPoints()) {
-            this.controller.getScene().remove3DObject(point.getMesh());
-        }
-        this.controller.getScene().remove3DObjects(p.getMesh());
-    }
+//    private void removePlayer(Player p) {
+//        for(Point point : p.getTrace().getPoints()) {
+//            this.controller.getScene().remove3DObject(point.getMesh());
+//        }
+//        this.controller.getScene().remove3DObjects(p.getMesh());
+//    }
 
     private void getUDPData(double time) throws IOException {
         this.udpSocket.receive(this.packet);
@@ -234,7 +261,7 @@ public class GameWorld {
         this.udpOrder = order;
         
         byte num_players = ByteBuffer.wrap(data, 8, 1).order(ByteOrder.LITTLE_ENDIAN).get();
-        System.out.println("Active Players: " +num_players);
+//        System.out.println("Active Players: " +num_players);
         Set<String> activePlayers = new ArraySet<>();
 
         for (int i = 0; i < num_players; i++) {
@@ -274,14 +301,30 @@ public class GameWorld {
             p.updatePosition((player_pos));
             p.rotate(Mat4.multiply(rot_z, rot_x));
             
+            controller.getScene().remove3DObjects(p.getTrace().getPoints());
             p.getTrace().notify(p.getPositionCopy());
+            controller.getScene().add3DObjects(p.getTrace().getPoints());
+            
+            p.setDirection(rotation);
             
             if (p == mplayer) {
                 Vec3 ppos = mplayer.getPosition();
-                updateCamera(ppos.subtract(rot_z.transform(new Vec3(25, 0, -5))), ppos, rotation.x);
-            }
+                p.setFrontCamera(ppos.subtract(rot_z.transform(new Vec3(25, 0, -5))), rotation.x);
+                p.setBackCamera(ppos.add(rot_z.transform(new Vec3(25, 0, 5))),  rotation.x);
 
-            p.setDirection(rotation);
+//                updateCamera();
+                
+            }
+            controller.getScene().remove3DObject(p.getLight());
+            Vec3 direction =  p.getPosition().subtract(p.getCamera().getPosition());
+            
+//            direction. = 0f;
+            direction = new Vec3(direction.x, direction.y, 0f);
+            p.setLight(direction);
+            controller.getScene().add3DObject(p.getLight());
+            
+            
+            
 
         }
         

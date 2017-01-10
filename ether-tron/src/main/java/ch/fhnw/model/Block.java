@@ -33,7 +33,7 @@ public class Block  implements Serializable {
     
     public Block(float x, float y) throws IOException {
         this.id = UUID.randomUUID().toString();
-        final URL obj = getClass().getResource("/models/block.obj");
+        final URL obj = getClass().getResource("/models/cube.obj");
         mesh = new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().get(0);
         this.setPosition(new Vec3(x, y, 0));
         

@@ -43,14 +43,9 @@ import ch.fhnw.ether.scene.mesh.IMesh.Primitive;
 import ch.fhnw.ether.scene.mesh.IMesh.Queue;
 import ch.fhnw.ether.scene.mesh.geometry.DefaultGeometry;
 import ch.fhnw.ether.scene.mesh.material.ColorMapMaterial;
-import ch.fhnw.ether.scene.mesh.material.ColorMaterial;
-import ch.fhnw.ether.scene.mesh.material.LineMaterial;
-import ch.fhnw.ether.scene.mesh.material.PointMaterial;
 import ch.fhnw.ether.view.DefaultView;
 import ch.fhnw.ether.view.IView;
 import ch.fhnw.util.Log;
-import ch.fhnw.util.color.RGBA;
-import ch.fhnw.util.math.Mat4;
 import ch.fhnw.util.math.Vec3;
 import ch.fhnw.util.math.geometry.GeodesicSphere;
 
@@ -76,7 +71,7 @@ public final class SimpleSphereExample {
 				IScene scene = new DefaultScene(controller);
 				controller.setScene(scene);
 
-				GeodesicSphere sphere = new GeodesicSphere(3);
+				GeodesicSphere sphere = new GeodesicSphere(50);
 
 
 //				transparentMeshT.setPosition(Vec3.X_NEG);

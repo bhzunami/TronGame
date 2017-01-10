@@ -95,27 +95,28 @@ public final class PostFXExample {
 		
 		IController controller = new DefaultController();
 		controller.run(time -> {
+			System.out.println("test");
 			
 			new DefaultView(controller, 100, 100, 500, 500, new IView.Config(ViewType.INTERACTIVE_VIEW, 0, new IView.ViewFlag[0]), "Test");
 
 			IScene scene = new DefaultScene(controller);
 			controller.setScene(scene);
 			
-			scene.add3DObject(new DirectionalLight(new Vec3(1, 1, 1), RGB.BLACK, RGB.WHITE));
+			scene.add3DObject(new DirectionalLight(new Vec3(-1, -1, 1), RGB.BLACK, RGB.WHITE));
 			
-//			URL obj;
-//			try {
-//				obj = new File("blender.obj").toURI().toURL();
-//				final List<IMesh> meshes = new ArrayList<>();
-//					new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().forEach(mesh -> meshes.add(mesh));
-//				final List<IMesh> merged = MeshUtilities.mergeMeshes(meshes);
-//				scene.add3DObjects(merged);
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
+			URL obj;
+			try {
+				obj = new File("fhnw.obj").toURI().toURL();
+				final List<IMesh> meshes = new ArrayList<>();
+					new ObjReader(obj, Options.CONVERT_TO_Z_UP).getMeshes().forEach(mesh -> meshes.add(mesh));
+				final List<IMesh> merged = MeshUtilities.mergeMeshes(meshes);
+				scene.add3DObjects(merged);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
-			scene.add3DObject(MeshUtilities.createCube());
+//			scene.add3DObject(MeshUtilities.createCube());
 
 			scene.add3DObject(MeshUtilities.createQuad(new PostMaterial(), Queue.POST, IMesh.NO_FLAGS));
 		});

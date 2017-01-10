@@ -22,8 +22,35 @@ vec4 blur13(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
   return color;
 }
 
+vec2 size = vec2(1000, 1000);
+int samples = 30; // pixels per axis; higher = bigger glow, worse performance
+float quality = 10; // lower = smaller glow, better quality
+
+vec4 bloom(vec4 colour, sampler2D tex, vec2 tc)
+{
+  vec4 source = texture(tex, tc);
+  vec4 sum = vec4(0);
+  int diff = (samples - 1) / 2;
+  vec2 sizeFactor = vec2(1) / size * quality;
+
+  for (int x = -diff; x <= diff; x++)
+  {
+    for (int y = -diff; y <= diff; y++)
+    {
+      vec2 offset = vec2(x, y) * sizeFactor;
+      sum += texture(tex, tc + offset);
+    }
+  }
+
+  return ((sum / (samples * samples)) + source) * colour;
+}
+
 void main() {
-	//fragColor = texture(colorMap, vsTexCoord);
+//	fragColor = texture(colorMap, vsTexCoord);
 	vec2 dim = textureSize(colorMap, 0);
-	fragColor = blur13(colorMap, vsTexCoord, dim, vec2(1, 1));
+
+	//fragColor = blur13(colorMap, vsTexCoord, dim, vec2(1, 1));
+
+
+	fragColor = bloom(vec4(1), colorMap, vsTexCoord);
 }

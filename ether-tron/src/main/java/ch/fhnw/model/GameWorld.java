@@ -12,33 +12,29 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.tritonus.share.ArraySet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.fhnw.ether.controller.IController;
-import ch.fhnw.ether.controller.event.IEventScheduler;
 import ch.fhnw.ether.image.IGPUImage;
 import ch.fhnw.ether.scene.IScene;
-import ch.fhnw.ether.scene.camera.Camera;
 import ch.fhnw.ether.scene.camera.ICamera;
-import ch.fhnw.ether.scene.light.DirectionalLight;
 import ch.fhnw.ether.scene.light.ILight;
 import ch.fhnw.ether.scene.light.PointLight;
-import ch.fhnw.ether.scene.light.SpotLight;
 import ch.fhnw.ether.scene.mesh.DefaultMesh;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.IMesh.Flag;
 import ch.fhnw.ether.scene.mesh.IMesh.Primitive;
-import ch.fhnw.ether.scene.mesh.IMesh.Queue;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
 import ch.fhnw.ether.scene.mesh.geometry.DefaultGeometry;
 import ch.fhnw.ether.scene.mesh.material.ColorMapMaterial;
 import ch.fhnw.ether.scene.mesh.material.ColorMaterial;
-import ch.fhnw.ether.scene.mesh.material.ShadedMaterial;
 import ch.fhnw.ether.view.IView;
 import ch.fhnw.main.events.UserInput;
 import ch.fhnw.model.PowerUpShader.PowerUpMaterial;
@@ -53,37 +49,22 @@ public class GameWorld {
 
     // The player which plays on this view
     private Player mplayer;
-    private HashMap<String, Player> players = new HashMap<>();
-//    private ICamera cam;
+    private Map<String, Player> players = new HashMap<>();
     private List<Block> blocks = new ArrayList<>();
     private List<PowerUp> powerUps = new ArrayList<>();
     
-    private int traceIterator = 0;
     private IController controller;
     public static final RGB AMBIENT = RGB.BLACK;
     public static final RGB COLOR = RGB.YELLOW;
     
-//    private ILight light = new PointLight(new Vec3(0, 0, 20), AMBIENT, COLOR, 10);
-    
-    private List<ILight> lights = new ArrayList<>();
-    
-    private ILight light2 = new PointLight(new Vec3(10, 0, 20), AMBIENT, COLOR, 1000);
-    private ILight light3 = new PointLight(new Vec3(50, 0, 20), AMBIENT, COLOR, 10);
-    private ILight mainLight = new DirectionalLight(new Vec3(0, 0, 10), AMBIENT, COLOR);
-//    private ILight light = new SpotLight(Vec3.Z, AMBIENT, COLOR, Vec3.Z, 0, 0);
-
     private IMesh lightMesh;
-    
-    IGPUImage t = IGPUImage.read(GameWorld.class.getResource("/textures/ground.jpg"));
-    private IMesh ground = MeshUtilities.createGroundPlane(new ColorMapMaterial(t), 100);
     
     private final int offset = 40;
     
     private long udpOrder = 0;
 
     DatagramSocket udpSocket;
-    private double time = 0f;
-
+    
     private InetAddress server;
 
     private byte[] buffer = new byte[1024];
@@ -141,7 +122,7 @@ public class GameWorld {
         controller.setCamera(view, cameras.get(0));
 
         // Ground
-        scene.add3DObject(ground);
+        scene.add3DObjects(createGround());
        
         // Lights
         // Add first light and light geometry
@@ -230,14 +211,12 @@ public class GameWorld {
         }
     }
 
-    public void setMovemnet(int movement, boolean pressed) {
+    public void setMovement(int movement, boolean pressed) {
         UserInput mov = UserInput.getEnumByKey(movement);
         // Remove
         if(UserInput.getEnumByKey(movement) == UserInput.SPACE && pressed) {
             System.out.println("SPACE");
             controller.setCamera(controller.getCurrentView(), mplayer.switchCamera());
-
-            ;
         }
         if (pressed) {
             this.userInputs.add(mov);
@@ -255,32 +234,6 @@ public class GameWorld {
         DatagramPacket p = new DatagramPacket(buf, buf.length, this.server, 7607);
         this.udpSocket.send(p);
     }
-
-    private void updateCamera(Vec3 position, Vec3 direction, float rot) {
-        // Vec3 camara_position = new Vec3(playerPosition.x, playerPosition.y - 6, playerPosition.z
-        // + 2);
-        Vec3 pos;
-        if(rot > 0) {
-            pos = new Vec3(position.x+Math.abs(rot)*2, position.y, position.z);
-        } else if(rot < 0) {
-            pos = new Vec3(position.x+Math.abs(rot)*2, position.y, position.z);
-        } else {
-            pos = new Vec3(position.x, position.y, position.z);
-        }
-        
-//        pos = pos.add(new Vec3(0, 0, 5));
-        
-//        cam.setPosition(pos);
-//        cam.setTarget(direction);
-
-    }
-    
-//    private void removePlayer(Player p) {
-//        for(Point point : p.getTrace().getPoints()) {
-//            this.controller.getScene().remove3DObject(point.getMesh());
-//        }
-//        this.controller.getScene().remove3DObjects(p.getMesh());
-//    }
 
     private void getUDPData(double time) throws IOException {
         this.udpSocket.receive(this.packet);
@@ -363,26 +316,21 @@ public class GameWorld {
             direction = new Vec3(direction.x, direction.y, 0f);
             p.setLight(direction);
             controller.getScene().add3DObject(p.getLight());
-            
-            
-            
-
         }
-        
-        // Check if player is deleted
-        
-//        if(this.players.size() > activePlayers.size()) {
-//            // Remove a player
-//            for(Object id : this.players.keySet().toArray()) {
-//                if(!activePlayers.contains((String)id))
-//                    this.removePlayer(this.players.get((String)id));
-//                    this.players.remove((String)id);
-//
-//            }
-//        }
 
+		// remove inactive players
+		Map<Boolean, List<Player>> result = players.values().stream().collect(Collectors.groupingBy(player -> activePlayers.contains(player.getId())));
+		
+		players = result.get(true).stream().collect(Collectors.toMap(p -> p.getId(), p -> p));
+		
+		if(result.containsKey(false)) {
+			result.get(false).stream().forEach(player -> {
+				System.out.println("Remove Player: " + player.getId());
+				controller.getScene().remove3DObjects(player.getMeshes());
+				controller.getScene().remove3DObjects(player.getTrace().getPoints());
+			});	
+		}
     }
-    
     
 
     public void addBlocks(float[][] blocks) throws IOException {

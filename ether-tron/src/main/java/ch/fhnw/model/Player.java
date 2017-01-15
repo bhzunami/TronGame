@@ -7,13 +7,14 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import ch.fhnw.ether.scene.IScene;
 import ch.fhnw.ether.scene.camera.Camera;
 import ch.fhnw.ether.scene.camera.ICamera;
 import ch.fhnw.ether.scene.light.ILight;
 import ch.fhnw.ether.scene.light.SpotLight;
 import ch.fhnw.ether.scene.mesh.IMesh;
-import ch.fhnw.helper.Trace;
 import ch.fhnw.util.math.Mat4;
+import ch.fhnw.util.math.MathUtilities;
 import ch.fhnw.util.math.Vec3;
 
 public class Player extends Model implements Serializable {
@@ -21,8 +22,6 @@ public class Player extends Model implements Serializable {
     private static final long serialVersionUID = 3003306163179867285L;
     private static final int NUMPOINTS = 600;
 
-    @JsonIgnore
-    private String name;
     private String id;
     private float abs_rot_angle = 0f;
     private Vec3 direction;
@@ -31,18 +30,19 @@ public class Player extends Model implements Serializable {
     private ICamera backCam;
     private ICamera frontCam;
     private ICamera activeCam;
+    private boolean isPrimary;
 
-    public Player(String name, boolean isPrimary) throws IOException {
+    public Player(String uuid, boolean isPrimary) throws IOException {
         super("tron.obj");
-
-        this.name = name;
+        
+        this.id = uuid;
         this.direction = new Vec3(1, 0, 0);
         this.trace = new Trace(NUMPOINTS, isPrimary);
         this.light = new SpotLight(Vec3.Z, GameWorld.AMBIENT, GameWorld.COLOR, Vec3.Z, 0, 0);
         this.backCam = new Camera();
         this.frontCam = new Camera();
         this.activeCam = this.frontCam;
-
+        this.isPrimary = isPrimary;
     }
 
     @JsonIgnore
@@ -61,14 +61,6 @@ public class Player extends Model implements Serializable {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override
@@ -92,11 +84,40 @@ public class Player extends Model implements Serializable {
         this.direction = direction;
     }
 
-    public void updatePosition(Vec3 position) {
-        this.setPosition(position);
+    public void updatePosition(Vec3 position, Vec3 rotation, IScene scene) {
+        // update player position
+        setPosition(position);
+
+        // Calculate rotation of player
+        setRotAngle(MathUtilities.RADIANS_TO_DEGREES * (rotation.z - getDirection().z));
+        
+        Mat4 rot_z = Mat4.rotate(getRotAngle(), Vec3.Z);
+        Mat4 rot_x = Mat4.rotate(MathUtilities.RADIANS_TO_DEGREES * rotation.x, Vec3.X);
+        
+        rotate(Mat4.multiply(rot_z, rot_x));
+
+        setDirection(rotation);
+
+        // update trace
+        scene.remove3DObjects(getTrace().getMeshes());
+        getTrace().notify(getPositionCopy().subtract(rot_z.transform(new Vec3(10, 0, 0))), Mat4.multiply(rot_z, rot_x));
+        scene.add3DObjects(getTrace().getMeshes());
+
+        // update cameras
+        if (isPrimary) {
+            setFrontCamera(getPosition().subtract(rot_z.transform(new Vec3(25, 0, -5))), rotation.x);
+            setBackCamera(getPosition().add(rot_z.transform(new Vec3(25, 0, 5))), rotation.x);
+        }
+        
+        // update light
+        scene.remove3DObject(getLight());
+        Vec3 direction = getPosition().subtract(frontCam.getPosition());
+        setLight(new Vec3(direction.x, direction.y, 0f));
+        scene.add3DObject(getLight());
+        
     }
 
-    public void rotate(Mat4 transformation) {
+    private void rotate(Mat4 transformation) {
         for (IMesh mesh : getMeshes()) {
             mesh.setTransform(transformation);
         }
@@ -114,7 +135,7 @@ public class Player extends Model implements Serializable {
         return this.light;
     }
 
-    public void setFrontCamera(Vec3 position, float rot) {
+    private void setFrontCamera(Vec3 position, float rot) {
         Vec3 pos;
         if (rot > 0) {
             pos = new Vec3(position.x + Math.abs(rot) * 2, position.y, position.z);
@@ -128,7 +149,7 @@ public class Player extends Model implements Serializable {
         this.frontCam.setTarget(this.getPosition());
     }
 
-    public void setBackCamera(Vec3 position, float rot) {
+    private void setBackCamera(Vec3 position, float rot) {
         Vec3 pos;
         if (rot > 0) {
             pos = new Vec3(position.x + Math.abs(rot) * 2, position.y, position.z);
@@ -161,4 +182,7 @@ public class Player extends Model implements Serializable {
         return cameras;
     }
 
+    public boolean isPrimary() {
+        return isPrimary;
+    }
 }

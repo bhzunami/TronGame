@@ -25,7 +25,6 @@ import ch.fhnw.helper.JoinResponseDao;
 import ch.fhnw.main.events.EventHandler;
 import ch.fhnw.model.GameWorld;
 import ch.fhnw.model.Player;
-import ch.fhnw.util.math.Vec3;
 
 public class TronGame {
 
@@ -33,29 +32,27 @@ public class TronGame {
 
     public static void main(String[] args) throws IOException {
 
-        if (args.length < 2) {
-            System.out.println("Please specify a player name and the server address");
+        if (args.length < 1) {
+            System.out.println("Please specify the server address");
             return;
         }
 
-        Player p = new Player(args[0], true);
-        String serverAddress = args[1];
-
-        p.setPosition(new Vec3(0, 0, 0));
-        new TronGame(p, serverAddress);
-
+        new TronGame(args[0]);
     }
 
-    public TronGame(Player player, String serverAddress) throws IOException {
+    public TronGame(String serverAddress) throws IOException {
         Platform.get().init();
 
         DatagramSocket udpSocket = new DatagramSocket();
         udpSocket.setSoTimeout(5);
         // Create controller
         IController controller = new DefaultController();
+
+        Player player = new Player(null, true);
+
         GameWorld gameWorld = new GameWorld(controller, player, udpSocket, serverAddress);
 
-        ITool evenntHandler = new EventHandler(controller, new NavigationTool(controller), gameWorld);
+        ITool eventHandler = new EventHandler(controller, new NavigationTool(controller), gameWorld);
 
         controller.run(time -> {
             // Create view
@@ -64,27 +61,18 @@ public class TronGame {
             // Create scene
             IScene scene = new DefaultScene(controller);
             controller.setScene(scene);
-            controller.setTool(evenntHandler);
+            controller.setTool(eventHandler);
 
             // Set game world objects
             try {
-                JoinResponseDao gameData = sendPlayer(player, udpSocket, serverAddress).getResponse();
-                // Update ID
-                player.setId(gameData.getId());
-                gameWorld.addPlayer(player, true);
-                gameWorld.addBlocks(gameData.getBlocks());
-                gameWorld.addPowerUps(gameData.getPowerUps());
+                JoinResponseDao gameData = sendPlayer(udpSocket.getLocalPort(), serverAddress).getResponse();
+                gameWorld.createWorld(view, gameData);
             } catch (JsonProcessingException ex) {
-                System.out.println("Could not read ansewr from server");
+                System.out.println("Could not read answer from server");
             } catch (IOException ex) {
                 System.out.println("Could not connect to server: " + ex.getMessage());
             }
 
-            try {
-                gameWorld.createWorld(scene, view);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
             gameWorld.run();
 
         });
@@ -93,15 +81,15 @@ public class TronGame {
         Platform.get().run();
     }
 
-    private GeneralResponse<JoinResponseDao> sendPlayer(Player player, DatagramSocket udpSocket, String serverAddress)
+    private GeneralResponse<JoinResponseDao> sendPlayer(int udpLocalPort, String serverAddress)
             throws JsonProcessingException, IOException {
         Socket tcpSocket = new Socket(serverAddress, 7606);
         OutputStream out = tcpSocket.getOutputStream();
         InputStream in = tcpSocket.getInputStream();
         // Prepare data to send
         HashMap<String, Object> playerMap = new HashMap<>();
-        playerMap.put("name", player.getName());
-        playerMap.put("port", udpSocket.getLocalPort());
+        playerMap.put("name", "");
+        playerMap.put("port", udpLocalPort);
 
         HashMap<String, Object> joinRequest = new HashMap<>();
         joinRequest.put("action", "join");

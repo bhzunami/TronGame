@@ -23,17 +23,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.fhnw.ether.controller.IController;
 import ch.fhnw.ether.image.IGPUImage;
-import ch.fhnw.ether.scene.IScene;
 import ch.fhnw.ether.scene.camera.ICamera;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
 import ch.fhnw.ether.scene.mesh.material.ColorMapMaterial;
 import ch.fhnw.ether.view.IView;
+import ch.fhnw.helper.JoinResponseDao;
 import ch.fhnw.main.events.UserInput;
 import ch.fhnw.model.PowerUpShader.PowerUpMaterial;
 import ch.fhnw.util.color.RGB;
-import ch.fhnw.util.math.Mat4;
-import ch.fhnw.util.math.MathUtilities;
 import ch.fhnw.util.math.Vec3;
 
 public class GameWorld {
@@ -84,34 +82,18 @@ public class GameWorld {
 
     }
 
-    public static List<IMesh> createGround() throws IOException {
-        IGPUImage t = IGPUImage.read(GameWorld.class.getResource("/textures/ground.jpg"));
-        List<IMesh> parts = new ArrayList<>();
-
-        int stepSize = 200;
-        int partSize = stepSize / 2;
-
-        for (int x = -1000; x < 1000; x += stepSize) {
-            for (int y = -1000; y < 1000; y += stepSize) {
-                IMesh ground = MeshUtilities.createGroundPlane(new ColorMapMaterial(t), partSize);
-                ground.setPosition(new Vec3(x + partSize, y + partSize, 0));
-                parts.add(ground);
-            }
-        }
-
-        return MeshUtilities.mergeMeshes(parts);
-    }
-
-    public void createWorld(IScene scene, IView view) throws IOException {
-        System.out.println("Create Game world");
+    public void createWorld(IView view, JoinResponseDao gameData) throws IOException {
+        mplayer.setId(gameData.getId());
+        addPlayer(mplayer);
+        addBlocks(gameData.getBlocks());
+        addPowerUps(gameData.getPowerUps());
 
         // Set main player camera
         List<ICamera> cameras = mplayer.getCameras();
         controller.setCamera(view, cameras.get(0));
 
-        // Ground
-        scene.add3DObjects(createGround());
-
+        controller.getScene().add3DObjects(mplayer.getCameras());
+        controller.getScene().add3DObjects(new Ground().getMeshes());
     }
 
     List<List<IMesh>> shaders = new ArrayList<>();
@@ -141,23 +123,11 @@ public class GameWorld {
         });
     }
 
-    public void addPlayer(Player p, boolean main) {
+    public void addPlayer(Player p) {
         this.players.put(p.getId(), p);
-        List<IMesh> x = p.getTrace().getPoints();
-        System.out.println(x.size());
-        this.controller.getScene().add3DObjects(x);
+        this.controller.getScene().add3DObjects(p.getTrace().getMeshes());
         this.controller.getScene().add3DObjects(p.getLight());
-
-        // for(Point point : p.getTrace().getPoints()) {
-        // this.controller.getScene().add3DObject(point.getMesh());
-        // }
-
-        if (main) {
-            this.mplayer = p;
-            this.controller.getScene().add3DObjects(mplayer.getMeshes());
-            this.controller.getScene().add3DObjects(mplayer.getCameras());
-
-        }
+        this.controller.getScene().add3DObjects(p.getMeshes());
     }
 
     public void setMovement(int movement, boolean pressed) {
@@ -209,6 +179,7 @@ public class GameWorld {
         Set<String> activePlayers = new ArraySet<>();
 
         for (int i = 0; i < num_players; i++) {
+            // read message part
             int index = messageSize * i;
             byte[] uuid = Arrays.copyOfRange(data, index + 9, index + 25);
             ByteBuffer byteBuffer = ByteBuffer.wrap(uuid);
@@ -227,58 +198,33 @@ public class GameWorld {
             Player p = players.get(puuid);
 
             if (p == null) {
-                System.out.println("NEW PLAYER");
                 // new player in game
-                p = new Player("test", false);
-                p.setId(puuid);
-                this.addPlayer(p, false);
-                this.controller.getScene().add3DObjects(p.getMeshes());
+                p = new Player(puuid, false);
+                this.addPlayer(p);
             }
 
             activePlayers.add(p.getId());
-
-            // Calculate rotation of player
-            p.setRotAngle(MathUtilities.RADIANS_TO_DEGREES * (rotation.z - p.getDirection().z));
-            Mat4 rot_z = Mat4.rotate(p.getRotAngle(), Vec3.Z);
-            Mat4 rot_x = Mat4.rotate(MathUtilities.RADIANS_TO_DEGREES * rotation.x, Vec3.X);
-
-            p.updatePosition((player_pos));
-            p.rotate(Mat4.multiply(rot_z, rot_x));
-
-            controller.getScene().remove3DObjects(p.getTrace().getPoints());
-            p.getTrace().notify(p.getPositionCopy().subtract(rot_z.transform(new Vec3(3, 0, 0))));
-            controller.getScene().add3DObjects(p.getTrace().getPoints());
-
-            p.setDirection(rotation);
-
-            if (p == mplayer) {
-                Vec3 ppos = mplayer.getPosition();
-                p.setFrontCamera(ppos.subtract(rot_z.transform(new Vec3(25, 0, -5))), rotation.x);
-                p.setBackCamera(ppos.add(rot_z.transform(new Vec3(25, 0, 5))), rotation.x);
-
-                // updateCamera();
-
-            }
-            controller.getScene().remove3DObject(p.getLight());
-            Vec3 direction = p.getPosition().subtract(p.getCamera().getPosition());
-
-            // direction. = 0f;
-            direction = new Vec3(direction.x, direction.y, 0f);
-            p.setLight(direction);
-            controller.getScene().add3DObject(p.getLight());
+            p.updatePosition(player_pos, rotation, controller.getScene());
         }
 
-        // remove inactive players
+        removeInactivePlayers(activePlayers);
+    }
+
+    private void removeInactivePlayers(Set<String> activePlayers) {
+        // check for inactive players
         Map<Boolean, List<Player>> result = players.values().stream()
                 .collect(Collectors.groupingBy(player -> activePlayers.contains(player.getId())));
 
+        // update player list with active players
         players = result.get(true).stream().collect(Collectors.toMap(p -> p.getId(), p -> p));
 
+        // remove inactive players
         if (result.containsKey(false)) {
             result.get(false).stream().forEach(player -> {
                 System.out.println("Remove Player: " + player.getId());
                 controller.getScene().remove3DObjects(player.getMeshes());
-                controller.getScene().remove3DObjects(player.getTrace().getPoints());
+                controller.getScene().remove3DObjects(player.getTrace().getMeshes());
+                controller.getScene().remove3DObject(player.getLight());
             });
         }
     }

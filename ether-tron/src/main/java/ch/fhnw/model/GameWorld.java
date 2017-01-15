@@ -57,6 +57,12 @@ public class GameWorld {
     public static final RGB AMBIENT = RGB.BLACK;
     public static final RGB COLOR = RGB.YELLOW;
     
+//    private ILight light = new PointLight(new Vec3(0, 0, 20), AMBIENT, COLOR, 10);
+    
+    private List<ILight> lights = new ArrayList<>();
+    
+//    private ILight mainLight = new DirectionalLight(new Vec3(0, 0, 10), AMBIENT, COLOR);
+
     private IMesh lightMesh;
     
     private final int offset = 40;
@@ -123,42 +129,6 @@ public class GameWorld {
 
         // Ground
         scene.add3DObjects(createGround());
-       
-        // Lights
-        // Add first light and light geometry
-        GeodesicSphere s = new GeodesicSphere(4);
-        lightMesh = new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(RGBA.YELLOW),
-                DefaultGeometry.createV(s.getTriangles()), Flag.DONT_CAST_SHADOW);
-        lightMesh.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 10f, 10f, 10f));
-        lightMesh.setPosition(new Vec3(0, 0, 100));
-        
-        
-        int pos = 0;
-        for(int i = 0; i < 6; i++) {
-            ILight light = new PointLight(new Vec3(pos, 0, 20), AMBIENT, RGB.WHITE, 250 );
-            
-            LightSource l = new LightSource();
-            l.setPosition(new Vec3(pos, 0, 0));
-            scene.add3DObjects(l.getMeshes());
-            
-            lightMesh = new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(RGBA.YELLOW),
-                    DefaultGeometry.createV(s.getTriangles()), Flag.DONT_CAST_SHADOW);
-            lightMesh.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 10f, 10f, 10f));
-            lightMesh.setPosition(new Vec3(pos, 0, 20));
-            scene.add3DObjects(lightMesh);
-            light.setPosition(lightMesh.getPosition());
-            scene.add3DObject(light);
-            System.out.println("X COR: " +i);
-
-            pos += 20;
-        }
-        
-    
-        //light.setPosition(lightMesh.getPosition());
-//        scene.add3DObjects(mainLight);
-//        scene.add3DObjects(light3);
-        
-//        scene.add3DObjects(lightMesh);
 
     }
     
@@ -331,13 +301,41 @@ public class GameWorld {
 			});	
 		}
     }
-    
+   
+   
+    public void addLight(Vec3 position) throws IOException {
+        GeodesicSphere s = new GeodesicSphere(4);
+        Vec3 lightPos = new Vec3(position.x, position.y, position.z + 10);
 
+        LightSource l = new LightSource(lightPos);
+        this.controller.getScene().add3DObjects(l.getMeshes());
+        this.controller.getScene().add3DObject(l.getLight());
+
+//        Vec3 lightSourcePosition = new Vec3(lightPos.x, lightPos.y, lightPos.z +15);
+//         lightMesh = new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(RGBA.YELLOW),
+//         DefaultGeometry.createV(s.getTriangles()), Flag.DONT_CAST_SHADOW);
+//         lightMesh.setTransform(Mat4.trs(0, 0, 0, 0, 0, 0, 10f, 10f, 10f));
+//         lightMesh.setPosition(lightSourcePosition);
+//         this.controller.getScene().add3DObjects(lightMesh);
+         
+//        this.controller.getScene().add3DObject(light);
+
+
+        
+        
+    }
+    
+   
     public void addBlocks(float[][] blocks) throws IOException {
         for(int i = 0; i < blocks.length; i++) {
-            Block b = new Block(blocks[i][0], blocks[i][1]);
+            Vec3 position = new Vec3(blocks[i][0], blocks[i][1], 0);
+            Block b = new Block(position.x, position.y);
             this.blocks.add(b);
             this.controller.getScene().add3DObjects(b.getMeshes());
+            
+            if(i % 17 == 0) {
+                this.addLight(position);
+            }
         }        
     }
 

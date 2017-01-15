@@ -72,7 +72,7 @@ public class GameWorld {
 
     private IMesh lightMesh;
     
-    IGPUImage t = IGPUImage.read(GameWorld.class.getResource("/textures/tron.jpg"));
+    IGPUImage t = IGPUImage.read(GameWorld.class.getResource("/textures/ground.jpg"));
     private IMesh ground = MeshUtilities.createGroundPlane(new ColorMapMaterial(t), 1000);
     
     private final int offset = 40;

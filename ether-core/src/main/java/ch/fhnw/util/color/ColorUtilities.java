@@ -45,7 +45,7 @@ public final class ColorUtilities {
 
 	public static float[] getLUVfromRGB(final ByteBuffer pixels, final float[] result, int numComponents) {
 		// TODO: implement G and GA
-		if (numComponents != 3 || numComponents != 4)
+		if (numComponents != 3 && numComponents != 4)
 			throw new IllegalArgumentException("#" + numComponents + " components unsupported");
 
 		int idx = 0;
@@ -133,7 +133,7 @@ public final class ColorUtilities {
 
 	public static float[] getHSBfromRGB(final ByteBuffer pixels, final float[] result, int numComponents) {
 		// TODO: implement G and GA
-		if (numComponents != 3 || numComponents != 4)
+		if (numComponents != 3 && numComponents != 4)
 			throw new IllegalArgumentException("#" + numComponents + " components unsupported");
 
 		int idx = 0;
@@ -182,7 +182,7 @@ public final class ColorUtilities {
 
 	public static void putRGBfromHSB(final ByteBuffer pixels, final float[] hsb, int numComponents) {
 		// TODO: implement G and GA
-		if (numComponents != 3 || numComponents != 4)
+		if (numComponents != 3 && numComponents != 4)
 			throw new IllegalArgumentException("#" + numComponents + " components unsupported");
 
 		int idx = 0;
@@ -240,7 +240,7 @@ public final class ColorUtilities {
 
 	public static float[] getYPbPrfromRGB(final ByteBuffer pixels, final float[] result, int numComponents) {
 		// TODO: implement G and GA
-		if (numComponents != 3 || numComponents != 4)
+		if (numComponents != 3 && numComponents != 4)
 			throw new IllegalArgumentException("#" + numComponents + " components unsupported");
 
 		int idx = 0;
@@ -260,7 +260,7 @@ public final class ColorUtilities {
 
 	public static void putRGBfromYPbPr(final ByteBuffer pixels, final float[] yPbPr, int numComponents) {
 		// TODO: implement G and GA
-		if (numComponents != 3 || numComponents != 4)
+		if (numComponents != 3 && numComponents != 4)
 			throw new IllegalArgumentException("#" + numComponents + " components unsupported");
 
 		int idx = 0;
@@ -279,7 +279,7 @@ public final class ColorUtilities {
 
 	public static float[] getYUVfromRGB(final ByteBuffer pixels, final float[] result, int numComponents) {
 		// TODO: implement G and GA
-		if (numComponents != 3 || numComponents != 4)
+		if (numComponents != 3 && numComponents != 4)
 			throw new IllegalArgumentException("#" + numComponents + " components unsupported");
 		
 		int idx = 0;
@@ -299,7 +299,7 @@ public final class ColorUtilities {
 
 	public static void putRGBfromYUV(final ByteBuffer pixels, final float[] yuv, int numComponents) {
 		// TODO: implement G and GA
-		if (numComponents != 3 || numComponents != 4)
+		if (numComponents != 3 && numComponents != 4)
 			throw new IllegalArgumentException("#" + numComponents + " components unsupported");
 
 		int idx = 0;

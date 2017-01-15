@@ -43,7 +43,7 @@ public class Player implements Serializable {
     
     public Player(String name) throws IOException {
         this.name = name;
-        this.mesh = Player.getPlayerMesh("blender.obj");
+        this.mesh = Player.getPlayerMesh("Tron_Light_cycle.obj");
         this.direction = new Vec3(1, 0, 0);
         this.trace = new Trace(NUMPOINTS);
         this.light = new SpotLight(Vec3.Z, GameWorld.AMBIENT, GameWorld.COLOR, Vec3.Z, 0, 0);

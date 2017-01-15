@@ -68,7 +68,7 @@ public class GameWorld {
     
     private ILight light2 = new PointLight(new Vec3(10, 0, 20), AMBIENT, COLOR, 1000);
     private ILight light3 = new PointLight(new Vec3(50, 0, 20), AMBIENT, COLOR, 10);
-//    private ILight light = new DirectionalLight(new Vec3(1,1,1), AMBIENT, COLOR);
+    private ILight mainLight = new DirectionalLight(new Vec3(0, 0, 10), AMBIENT, COLOR);
 //    private ILight light = new SpotLight(Vec3.Z, AMBIENT, COLOR, Vec3.Z, 0, 0);
 
     private IMesh lightMesh;
@@ -133,7 +133,7 @@ public class GameWorld {
         lightMesh.setPosition(new Vec3(0, 0, 100));
         
         //light.setPosition(lightMesh.getPosition());
-//        scene.add3DObjects(light);
+        scene.add3DObjects(mainLight);
 //        scene.add3DObjects(light3);
         
         scene.add3DObjects(lightMesh);
@@ -302,7 +302,7 @@ public class GameWorld {
             p.rotate(Mat4.multiply(rot_z, rot_x));
             
             controller.getScene().remove3DObjects(p.getTrace().getPoints());
-            p.getTrace().notify(p.getPositionCopy());
+            p.getTrace().notify(p.getPositionCopy().subtract(rot_z.transform(new Vec3(3, 0, 0))));
             controller.getScene().add3DObjects(p.getTrace().getPoints());
             
             p.setDirection(rotation);

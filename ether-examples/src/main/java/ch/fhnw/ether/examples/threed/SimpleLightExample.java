@@ -120,7 +120,7 @@ public final class SimpleLightExample {
 					break;
 				case GLFW.GLFW_KEY_3:
 					scene.remove3DObject(light);
-					light = new SpotLight(light.getPosition(), AMBIENT, COLOR, 10, new Vec3(-1, 0, -1), 15, 0);
+					light = new SpotLight(light.getPosition(), AMBIENT, COLOR, 10, Vec3.Z_NEG, 15, 0);
 					scene.add3DObject(light);
 					break;
 				case GLFW.GLFW_KEY_UP:

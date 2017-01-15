@@ -34,6 +34,7 @@ public class PlotWindow implements PaintListener, MouseListener {
 				shell.pack();
 				shell.setSize(800, shell.getSize().y);
 				shell.setVisible(true);
+				shell.setActive();
 				new Repeating(500, 20, canvasUI, canvasUI::redraw);
 			}
 		});

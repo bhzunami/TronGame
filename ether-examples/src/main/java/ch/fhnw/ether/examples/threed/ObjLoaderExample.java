@@ -31,7 +31,6 @@
 
 package ch.fhnw.ether.examples.threed;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -67,11 +66,11 @@ public class ObjLoaderExample {
 			controller.setScene(scene);
 			
 			scene.add3DObject(new DirectionalLight(new Vec3(1, 1, 1), RGB.BLACK, RGB.WHITE));
-			scene.add3DObject(new DirectionalLight(new Vec3(-1, -1, 1), RGB.BLACK, RGB.WHITE));
 	
 			try {
-				//final URL obj = getClass().getResource("/models/fhnw.obj");
-				final URL obj = new File("blender.obj").toURI().toURL();
+				final URL obj = getClass().getResource("/models/fhnw.obj");
+				//final URL obj = new URL("file:///Users/radar/Desktop/cube.obj");
+				//final URL obj = new URL("file:///Users/radar/Desktop/brz_lod300.obj");
 				//final URL obj = new URL("file:///Users/radar/Desktop/aventador/aventador_red.obj");
 				//final URL obj = new URL("file:///Users/radar/Desktop/demopolis/berlin_mitte_o2_o3/o2_small.obj");
 				final List<IMesh> meshes = new ArrayList<>();

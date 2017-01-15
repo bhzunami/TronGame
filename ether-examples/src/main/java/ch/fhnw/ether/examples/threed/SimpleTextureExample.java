@@ -41,7 +41,6 @@ import ch.fhnw.ether.scene.IScene;
 import ch.fhnw.ether.scene.mesh.DefaultMesh;
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.IMesh.Primitive;
-import ch.fhnw.ether.scene.mesh.IMesh.Queue;
 import ch.fhnw.ether.scene.mesh.geometry.DefaultGeometry;
 import ch.fhnw.ether.scene.mesh.geometry.IGeometry;
 import ch.fhnw.ether.scene.mesh.material.ColorMapMaterial;
@@ -53,83 +52,76 @@ import ch.fhnw.util.math.Mat4;
 
 public final class SimpleTextureExample {
 
-    public static void main(String[] args) {
-        new SimpleTextureExample();
-    }
+	public static void main(String[] args) {
+		new SimpleTextureExample();
+	}
 
-    private static IMesh makeTexturedTriangle() {
-        float[] vertices = { 0, 1f, 0, 1f, 0, 0f, 0, 0, 1f };
-        // float[] colors = { 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1 };
-        float[] colors = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-        // float[] texCoords = { 0, 0, 1, 1, 0, 1 };
-        float[] texCoords = { 0, 0, 0, 1, 1, 1 };
+	private static IMesh makeTexturedTriangle() {
+		float[] vertices = { 0, 0, 0, 0.5f, 0, 0.5f, 0, 0, 0.5f };
+		float[] colors = { 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1 };
+		float[] texCoords = { 0, 0, 1, 1, 0, 1 };
+		
+		try {
+			IGPUImage t = IGPUImage.read(SimpleTextureExample.class.getResource("/textures/fhnw_logo.jpg"));
+			IMaterial m = new ColorMapMaterial(RGBA.WHITE, t, true);
+			IGeometry g = DefaultGeometry.createVCM(vertices, colors, texCoords);
+			return new DefaultMesh(Primitive.TRIANGLES, m, g);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("cant load image");
+			System.exit(1);
+		}
+		return null;
+	}
 
-        try {
-            IGPUImage t = IGPUImage.read(SimpleTextureExample.class.getResource("/textures/tron.jpg"));
+	private IMesh mesh;
 
-            IMesh texturedMeshT = new DefaultMesh(Primitive.TRIANGLES, new ColorMapMaterial(t),
-                    DefaultGeometry.createVM(vertices, texCoords), Queue.DEPTH);
+	// Setup the whole thing
+	public SimpleTextureExample() {
+		// Init platform
+		Platform.get().init();
+		
+		// Create controller
+		IController controller = new DefaultController();
+		controller.run(time -> {
+			// Create view
+			new DefaultView(controller, 100, 100, 500, 500, IView.INTERACTIVE_VIEW, "Test");
+	
+			// Create scene and add triangle
+			IScene scene = new DefaultScene(controller);
+			controller.setScene(scene);
+	
+			mesh = makeTexturedTriangle();
+			scene.add3DObject(mesh);
+		});
 
-            IMaterial m = new ColorMapMaterial(RGBA.WHITE, t, true);
-            IGeometry g = DefaultGeometry.createVCM(vertices, colors, texCoords);
-            return texturedMeshT;
-//            return new DefaultMesh(Primitive.TRIANGLES, m, g);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("cant load image");
-            System.exit(1);
-        }
-        return null;
-    }
+		// Animate (Using event timer)
+		controller.animate(new IEventScheduler.IAnimationAction() {
+			private int c = 0;
 
-    private IMesh mesh;
+			@Override
+			public void run(double time, double interval) {
 
-    // Setup the whole thing
-    public SimpleTextureExample() {
-        // Init platform
-        Platform.get().init();
+				// make some heavy animation calculation
+				c += 4;
+				if (c >= 360)
+					c = 0;
+				float f = 0.4f + 0.6f * (float) (Math.sin(Math.toRadians(c)) * 0.5 + 1);
 
-        // Create controller
-        IController controller = new DefaultController();
-        controller.run(time -> {
-            // Create view
-            new DefaultView(controller, 100, 100, 500, 500, IView.INTERACTIVE_VIEW, "Test");
-
-            // Create scene and add triangle
-            IScene scene = new DefaultScene(controller);
-            controller.setScene(scene);
-
-            mesh = makeTexturedTriangle();
-            scene.add3DObject(mesh);
-        });
-
-        // Animate (Using event timer)
-        controller.animate(new IEventScheduler.IAnimationAction() {
-            private int c = 0;
-
-            @Override
-            public void run(double time, double interval) {
-
-                // make some heavy animation calculation
-                c += 4;
-                if (c >= 360)
-                    c = 0;
-                float f = 0.4f + 0.6f * (float) (Math.sin(Math.toRadians(c)) * 0.5 + 1);
-
-                // apply changes to geometry
-//                 mesh.setTransform(Mat4.scale(f, f, f));
-//                mesh.getGeometry().modify(1, (id, vertices) -> {
-//                    for (int i = 0; i < vertices.length; ++i) {
-//                        if (i % 4 == 3)
-//                            continue;
-//                         vertices[i] -= 0.2f * (1 - f);
-//                         if (vertices[i + 0] <= 0)
-//                         vertices[i + 0] = 1;
-//                    }
-//                });
-            }
-        });
-
-        Platform.get().run();
-    }
+				// apply changes to geometry
+				mesh.setTransform(Mat4.scale(f, f, f));
+				mesh.getGeometry().modify(1, (id, vertices) -> {
+					for (int i = 0; i < vertices.length; ++i) {
+						if (i % 4 == 3)
+							continue;
+						vertices[i] -= 0.2f * (1 - f);
+						if (vertices[i + 0] <= 0)
+							vertices[i + 0] = 1;
+					}
+				});
+			}
+		});
+		
+		Platform.get().run();
+	}
 }

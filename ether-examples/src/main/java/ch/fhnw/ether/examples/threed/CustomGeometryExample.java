@@ -31,9 +31,6 @@
 
 package ch.fhnw.ether.examples.threed;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import ch.fhnw.ether.controller.DefaultController;
 import ch.fhnw.ether.controller.IController;
 import ch.fhnw.ether.platform.Platform;
@@ -51,64 +48,6 @@ import ch.fhnw.util.color.RGBA;
 public final class CustomGeometryExample {
 	public static void main(String[] args) {
 		new CustomGeometryExample();
-	}
-	
-public static List<IMesh> makeColoredTriangle() {
-		
-		float[][] vertices = {
-			{
-				5, 5, 5, 
-				0, 5, 0,
-				5, 0, 0,
-			},
-			{
-				5, 5, 5, 
-				5, 10, 0,
-				0, 5, 0,
-			},
-			{
-				5, 5, 5, 
-				10, 5, 0,
-				5, 10, 0
-			},
-			{
-				5, 5, 5, 
-				5, 0, 0,
-				10, 5, 0,
-			},
-		};
-		float[][] colors = {
-				{
-					1, 0, 0, 1, 
-					0, 1, 0, 1, 
-					0, 0, 1, 1
-				},
-				{
-					1, 0, 0, 1, 
-					0, 1, 0, 1, 
-					0, 0, 1, 1
-				},
-				{
-					1, 0, 0, 1, 
-					0, 1, 0, 1, 
-					0, 0, 1, 1
-				},
-				{
-					1, 0, 0, 1, 
-					0, 1, 0, 1, 
-					0, 0, 1, 1
-				},
-		};
-		
-		List<IMesh> meshes = new ArrayList<>();
-		
-		for(int i = 0; i < colors.length; i++) {
-			DefaultGeometry g = DefaultGeometry.createVC(vertices[i], colors[i]);
-			meshes.add(new DefaultMesh(Primitive.TRIANGLES, new ColorMaterial(new RGBA(colors[i])), g));
-		}
-		
-		
-		return meshes;
 	}
 
 	private static IMesh makeColoredTriangle(float off) {
@@ -134,8 +73,8 @@ public static List<IMesh> makeColoredTriangle() {
 			IScene scene = new DefaultScene(controller);
 			controller.setScene(scene);
 
-			scene.add3DObjects(makeColoredTriangle());
-			//scene.add3DObject(makeColoredTriangle(1));
+			scene.add3DObject(makeColoredTriangle(0));
+			scene.add3DObject(makeColoredTriangle(1));
 		});
 		
 		Platform.get().run();

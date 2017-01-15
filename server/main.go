@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/satori/go.uuid"
 	"log"
 	"math"
 	"math/rand"
@@ -15,6 +14,8 @@ import (
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/satori/go.uuid"
 )
 
 const PowerUpVelocityMultiplier = 1.5
@@ -22,7 +23,7 @@ const PowerUpVelocityMultiplier = 1.5
 var (
 	Blocks      = [100][2]float32{}
 	PowerUps    = [20][2]float32{}
-	BlockSize   = [3]float32{5, 8}
+	BlockSize   = [3]float32{10, 25}
 	PowerUpSize = [3]float32{10, 10}
 	DamageSize  = [3]float32{2, 2}
 )
@@ -493,7 +494,7 @@ func HandleJoin(req JoinRequest) (JoinResponse, *ErrorResponse) {
 		Connection: conn,
 		Position:   [3]float32{(2000.0 * rand.Float32()) - 1000.0, (2000.0 * rand.Float32()) - 1000.0, 5},
 		Rotation:   [3]float32{0, 0, 0},
-		Velocity:   3,
+		Velocity:   4,
 		Damage:     &DamageBuffer{},
 	}
 	Players.Lock.Unlock()

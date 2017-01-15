@@ -5,8 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,27 +28,27 @@ import ch.fhnw.model.Player;
 import ch.fhnw.util.math.Vec3;
 
 public class TronGame {
-    
+
     private static ObjectMapper mapper = new ObjectMapper();
 
     public static void main(String[] args) throws IOException {
-        
-        if(args.length < 2 ) {
+
+        if (args.length < 2) {
             System.out.println("Please specify a player name and the server address");
             return;
         }
-        
+
         Player p = new Player(args[0], true);
         String serverAddress = args[1];
-        
-        p.setPosition(new Vec3(0,0,0));
+
+        p.setPosition(new Vec3(0, 0, 0));
         new TronGame(p, serverAddress);
 
     }
 
     public TronGame(Player player, String serverAddress) throws IOException {
         Platform.get().init();
-        
+
         DatagramSocket udpSocket = new DatagramSocket();
         udpSocket.setSoTimeout(5);
         // Create controller
@@ -67,7 +65,7 @@ public class TronGame {
             IScene scene = new DefaultScene(controller);
             controller.setScene(scene);
             controller.setTool(evenntHandler);
-            
+
             // Set game world objects
             try {
                 JoinResponseDao gameData = sendPlayer(player, udpSocket, serverAddress).getResponse();
@@ -76,30 +74,27 @@ public class TronGame {
                 gameWorld.addPlayer(player, true);
                 gameWorld.addBlocks(gameData.getBlocks());
                 gameWorld.addPowerUps(gameData.getPowerUps());
-            } catch(JsonProcessingException ex) {
+            } catch (JsonProcessingException ex) {
                 System.out.println("Could not read ansewr from server");
-            } catch(IOException ex) {
-                System.out.println("Could not connect to server: " +ex.getMessage());
+            } catch (IOException ex) {
+                System.out.println("Could not connect to server: " + ex.getMessage());
             }
-            
-            
+
             try {
                 gameWorld.createWorld(scene, view);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             gameWorld.run();
 
         });
-        
-        
+
         // Start main game loop
         Platform.get().run();
     }
-    
-    @SuppressWarnings("unchecked")
-    private GeneralResponse<JoinResponseDao> sendPlayer(Player player, DatagramSocket udpSocket, String serverAddress) throws JsonProcessingException, IOException {
+
+    private GeneralResponse<JoinResponseDao> sendPlayer(Player player, DatagramSocket udpSocket, String serverAddress)
+            throws JsonProcessingException, IOException {
         Socket tcpSocket = new Socket(serverAddress, 7606);
         OutputStream out = tcpSocket.getOutputStream();
         InputStream in = tcpSocket.getInputStream();
@@ -107,24 +102,26 @@ public class TronGame {
         HashMap<String, Object> playerMap = new HashMap<>();
         playerMap.put("name", player.getName());
         playerMap.put("port", udpSocket.getLocalPort());
-        
+
         HashMap<String, Object> joinRequest = new HashMap<>();
         joinRequest.put("action", "join");
         joinRequest.put("payload", playerMap);
-        
+
         // Write player data to Server as TCP
         out.write(mapper.writeValueAsString(joinRequest).getBytes());
         out.flush();
         // Get player id
-        GeneralResponse<JoinResponseDao> response = new GeneralResponse<>();
-        response = mapper.readValue(in, new TypeReference<GeneralResponse<JoinResponseDao>>() {});
-        
+        GeneralResponse<JoinResponseDao> response = mapper.readValue(in,
+                new TypeReference<GeneralResponse<JoinResponseDao>>() {
+                });
+
+        tcpSocket.close();
+
         // Check if error
-        if(response.isError()) {
+        if (response.isError()) {
             throw new RuntimeException("Response Error");
         }
 
-        tcpSocket.close();
         return response;
     }
 

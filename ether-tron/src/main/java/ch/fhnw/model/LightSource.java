@@ -5,7 +5,6 @@ import java.io.IOException;
 import ch.fhnw.ether.scene.light.ILight;
 import ch.fhnw.ether.scene.light.PointLight;
 import ch.fhnw.util.color.RGB;
-import ch.fhnw.util.color.RGBA;
 import ch.fhnw.util.math.Vec3;
 
 public class LightSource extends Model{

@@ -37,15 +37,12 @@ public class Player implements Serializable {
     private ICamera backCam;
     private ICamera frontCam;
     private ICamera activeCam;
-    
-    
-    public Player() {}
-    
-    public Player(String name) throws IOException {
+        
+    public Player(String name, boolean isPrimary) throws IOException {
         this.name = name;
-        this.mesh = Player.getPlayerMesh("Tron_Light_cycle.obj");
+        this.mesh = Player.getPlayerMesh("tron.obj");
         this.direction = new Vec3(1, 0, 0);
-        this.trace = new Trace(NUMPOINTS);
+        this.trace = new Trace(NUMPOINTS, isPrimary);
         this.light = new SpotLight(Vec3.Z, GameWorld.AMBIENT, GameWorld.COLOR, Vec3.Z, 0, 0);
         this.backCam = new Camera();
         this.frontCam = new Camera();

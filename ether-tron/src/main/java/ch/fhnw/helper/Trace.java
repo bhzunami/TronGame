@@ -5,7 +5,8 @@ import java.util.List;
 
 import ch.fhnw.ether.scene.mesh.IMesh;
 import ch.fhnw.ether.scene.mesh.MeshUtilities;
-import ch.fhnw.model.Point;
+import ch.fhnw.ether.scene.mesh.material.ColorMaterial;
+import ch.fhnw.util.color.RGBA;
 import ch.fhnw.util.math.Vec3;
 
 public class Trace {
@@ -18,17 +19,22 @@ public class Trace {
     private int numPoints;
     
     
-    public Trace(int numPoints) {
+    public Trace(int numPoints, boolean isPrimary) {
         this.numPoints = numPoints;
         this.points = new ArrayList<>();
         
         for(int i = 0; i < numPoints; i++) {
-            Point point = new Point();
-            points.add(point.getMesh());
+            points.add(createPoint(isPrimary));
         }
         
         merged = MeshUtilities.mergeMeshes(this.points);
         
+    }
+    
+    public static IMesh createPoint(boolean isPrimary) {
+        IMesh mesh = MeshUtilities.createCube(new ColorMaterial(isPrimary ? RGBA.CYAN : RGBA.GREEN));
+        mesh.setPosition(new Vec3(2000f, 0f, -20f));
+        return mesh;
     }
     
     public List<IMesh> getPoints() {

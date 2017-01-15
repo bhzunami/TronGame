@@ -40,7 +40,7 @@ public class TronGame {
             return;
         }
         
-        Player p = new Player(args[0]);
+        Player p = new Player(args[0], true);
         String serverAddress = args[1];
         
         p.setPosition(new Vec3(0,0,0));

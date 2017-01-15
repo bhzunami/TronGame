@@ -57,7 +57,6 @@ public class GameWorld {
 //    private ICamera cam;
     private List<Block> blocks = new ArrayList<>();
     private List<PowerUp> powerUps = new ArrayList<>();
-    private Point[] trace = new Point[600];
     
     private int traceIterator = 0;
     private IController controller;
@@ -285,7 +284,7 @@ public class GameWorld {
             if (p == null) {
                 System.out.println("NEW PLAYER");
                 // new player in game
-                p = new Player("test");
+                p = new Player("test", false);
                 p.setId(puuid);
                 this.addPlayer(p, false);
                 this.controller.getScene().add3DObjects(p.getMesh());
